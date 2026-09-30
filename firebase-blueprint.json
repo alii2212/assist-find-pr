@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile metadata record for authenticated user",
+      "type": "object",
+      "properties": {
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastActive": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "A single project-advisory chat session belonging to a user",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "previousInteractionId": { "type": "string" },
+        "conversationPageUrl": { "type": "string" },
+        "lastMessagePreview": { "type": "string" }
+      },
+      "required": ["title", "createdAt", "updatedAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A single conversation message in a chat session",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "assistant"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "sources": { "type": "string" },
+        "projectCards": { "type": "string" }
+      },
+      "required": ["role", "content", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User root document"
+    },
+    "/users/{uid}/chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Chat session documents owned by the user"
+    },
+    "/users/{uid}/chats/{chatId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages belonging to the user's specific chat"
+    }
+  }
+}

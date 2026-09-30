@@ -1,0 +1,7 @@
+{
+  "name": "دستیار هوشمند یونس دهقان",
+  "description": "دستیار هوشمند مبتنی بر هوش مصنوعی برای پاسخگویی به پرسش‌ها درباره سوابق، حوزه‌های فعالیت و اهداف یونس دهقان",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
