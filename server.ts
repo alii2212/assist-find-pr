@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { apiRouter } from './src/server/apiRouter.ts';
 
@@ -18,7 +19,7 @@ async function startServer() {
   app.use((_req, res, next) => {
     res.setHeader(
       'Content-Security-Policy',
-      "frame-ancestors 'self' https://yazdinnofaraz.ir https://www.yazdinnofaraz.ir https://*.run.app;"
+      "frame-ancestors 'self' https://yazdinnofaraz.ir https://www.yazdinnofaraz.ir https://*.run.app https://*.onrender.com;"
     );
     res.removeHeader('X-Frame-Options');
     next();
@@ -27,9 +28,12 @@ async function startServer() {
   // API routes
   app.use('/api', apiRouter);
 
-  if (process.env.NODE_ENV === 'production') {
+  const distPath = path.resolve(__dirname, 'dist');
+  const hasDist = fs.existsSync(path.join(distPath, 'index.html'));
+
+  if (process.env.NODE_ENV === 'production' || hasDist) {
     // Serve static frontend build
-    const distPath = path.resolve(__dirname, 'dist');
+    console.log('Serving production static build from dist');
     app.use(express.static(distPath));
     app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
@@ -40,6 +44,7 @@ async function startServer() {
     const vite = await createServer({
       server: {
         middlewareMode: true,
+        allowedHosts: true,
         hmr: process.env.DISABLE_HMR !== 'true',
       },
       appType: 'spa',
