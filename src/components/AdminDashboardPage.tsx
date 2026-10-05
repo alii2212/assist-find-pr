@@ -394,9 +394,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   // Render Loading
   if (authChecking) {
     return (
-      <div dir="rtl" className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-300 font-sans p-4">
-        <div className="w-10 h-10 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <h2 className="text-base font-bold text-white">در حال بررسی دسترسی مدیریت سامانه...</h2>
+      <div dir="rtl" className="min-h-screen bg-[#f8f7fc] flex flex-col items-center justify-center text-slate-700 font-sans p-4">
+        <div className="w-10 h-10 border-3 border-purple-600 border-t-transparent rounded-full animate-spin mb-4" />
+        <h2 className="text-base font-bold text-slate-900">در حال بررسی دسترسی مدیریت سامانه...</h2>
         <p className="text-xs text-slate-500 mt-1">احراز هویت سروری با Firebase</p>
       </div>
     );
@@ -405,14 +405,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   // Render Unauthorized / Login Required
   if (!currentUser) {
     return (
-      <div dir="rtl" className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-200 font-sans p-6">
-        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center shadow-2xl space-y-5">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
+      <div dir="rtl" className="min-h-screen bg-[#f8f7fc] flex flex-col items-center justify-center text-slate-700 font-sans p-6">
+        <div className="w-full max-w-md bg-white border border-purple-150 rounded-3xl p-8 text-center shadow-2xl space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-purple-50 border border-purple-200 flex items-center justify-center text-purple-700 mx-auto">
             <ShieldCheck className="w-8 h-8" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-white">ورود به پنل مدیریت دستیار هوشمند</h1>
-            <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+            <h1 className="text-xl font-black text-slate-900">ورود به پنل مدیریت دستیار هوشمند</h1>
+            <p className="text-xs text-slate-500 mt-2 leading-relaxed">
               برای مدیریت حوزه‌های پروژه، دانش سایت و جهت‌دهی دستیار، ابتدا با حساب کاربری Google مجاز وارد شوید.
             </p>
           </div>
@@ -426,7 +426,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
           <button
             type="button"
             onClick={handleLogin}
-            className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg shadow-emerald-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-sm shadow-lg shadow-purple-700/20 transition-all cursor-pointer flex items-center justify-center gap-2"
           >
             <span>ورود با حساب گوگل</span>
           </button>
@@ -435,7 +435,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             <button
               type="button"
               onClick={onBackToApp}
-              className="text-xs text-slate-400 hover:text-white transition-colors"
+              className="text-xs text-slate-500 hover:text-purple-800 transition-colors"
             >
               بازگشت به پیش‌نمایش سایت
             </button>
@@ -448,23 +448,23 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   // Render Access Denied for Non-Admin Authenticated Users
   if (!isAdmin) {
     return (
-      <div dir="rtl" className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-200 font-sans p-6">
-        <div className="w-full max-w-md bg-slate-900 border border-rose-900/40 rounded-3xl p-8 text-center shadow-2xl space-y-4">
+      <div dir="rtl" className="min-h-screen bg-[#f8f7fc] flex flex-col items-center justify-center text-slate-700 font-sans p-6">
+        <div className="w-full max-w-md bg-white border border-rose-900/40 rounded-3xl p-8 text-center shadow-2xl space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto">
             <AlertTriangle className="w-8 h-8" />
           </div>
           <h1 className="text-lg font-black text-rose-300">
             شما اجازه دسترسی به پنل مدیریت را ندارید.
           </h1>
-          <p className="text-xs text-slate-400 leading-relaxed">
-            حساب کاربری فعلی شما (<span className="font-mono text-emerald-400">{currentUser?.email}</span>) در فهرست مدیران مجاز سرور ثبت نشده است. دسترسی به پیکربندی، سوابق و دانش سایت محافظت شده است.
+          <p className="text-xs text-slate-500 leading-relaxed">
+            حساب کاربری فعلی شما (<span className="font-mono text-purple-700">{currentUser?.email}</span>) در فهرست مدیران مجاز سرور ثبت نشده است. دسترسی به پیکربندی، سوابق و دانش سایت محافظت شده است.
           </p>
 
           <div className="pt-2 flex flex-col gap-2">
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold cursor-pointer"
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
             >
               خروج و ورود با حسابی دیگر
             </button>
@@ -472,7 +472,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               <button
                 type="button"
                 onClick={onBackToApp}
-                className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                className="text-xs text-slate-500 hover:text-slate-700 transition-colors"
               >
                 بازگشت به پیش‌نمایش
               </button>
@@ -491,20 +491,20 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
         );
 
   return (
-    <div dir="rtl" className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col md:flex-row">
+    <div dir="rtl" className="min-h-screen bg-[#f8f7fc] text-slate-800 font-sans flex flex-col md:flex-row">
       {/* Sidebar for Desktop */}
-      <aside className="w-full md:w-64 bg-slate-900/90 border-b md:border-b-0 md:border-l border-slate-800 flex flex-col shrink-0">
+      <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-l border-purple-150 flex flex-col shrink-0">
         {/* Brand Header */}
-        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+        <div className="p-5 border-b border-purple-150 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-black">
+            <div className="w-9 h-9 rounded-xl bg-purple-100 border border-purple-200 flex items-center justify-center text-purple-700 font-black">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xs font-black text-white leading-tight">
+              <h1 className="text-xs font-black text-slate-900 leading-tight">
                 مرکز رشد فراز یزد
               </h1>
-              <p className="text-[10px] text-slate-400 mt-0.5">پنل جامع مدیریت دستیار</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">پنل جامع مدیریت دستیار</p>
             </div>
           </div>
         </div>
@@ -516,8 +516,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             onClick={() => setActiveTab('overview')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'overview'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                ? 'bg-purple-700 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
             }`}
           >
             <LayoutDashboard className="w-4 h-4 shrink-0" />
@@ -529,8 +529,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             onClick={() => setActiveTab('domains')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'domains'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                ? 'bg-purple-700 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
             }`}
           >
             <Layers className="w-4 h-4 shrink-0" />
@@ -542,8 +542,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             onClick={() => setActiveTab('knowledge')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'knowledge'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                ? 'bg-purple-700 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
             }`}
           >
             <Database className="w-4 h-4 shrink-0" />
@@ -555,8 +555,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             onClick={() => setActiveTab('direction')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'direction'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                ? 'bg-purple-700 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
             }`}
           >
             <Sliders className="w-4 h-4 shrink-0" />
@@ -568,11 +568,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             onClick={() => setActiveTab('sync')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'sync'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                ? 'bg-purple-700 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
             }`}
           >
-            <RefreshCw className={`w-4 h-4 shrink-0 ${isSyncing ? 'animate-spin text-emerald-400' : ''}`} />
+            <RefreshCw className={`w-4 h-4 shrink-0 ${isSyncing ? 'animate-spin text-purple-700' : ''}`} />
             <span>وضعیت همگام‌سازی</span>
           </button>
 
@@ -581,8 +581,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             onClick={() => setActiveTab('system')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'system'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                ? 'bg-purple-700 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
             }`}
           >
             <Activity className="w-4 h-4 shrink-0" />
@@ -594,8 +594,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             onClick={() => setActiveTab('wordpress')}
             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'wordpress'
-                ? 'bg-emerald-600 text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                ? 'bg-purple-700 text-white shadow-md'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
             }`}
           >
             <Code2 className="w-4 h-4 shrink-0" />
@@ -604,12 +604,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
         </nav>
 
         {/* User Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between">
+        <div className="p-4 border-t border-purple-150 bg-[#f8f7fc]/60 flex items-center justify-between">
           <div className="min-w-0">
-            <span className="block text-[11px] font-bold text-white truncate">
+            <span className="block text-[11px] font-bold text-slate-900 truncate">
               {currentUser?.email}
             </span>
-            <span className="inline-block px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[9px] font-mono mt-0.5">
+            <span className="inline-block px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 text-[9px] font-mono mt-0.5">
               مدیر تاییدشده
             </span>
           </div>
@@ -619,7 +619,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               <button
                 type="button"
                 onClick={onBackToApp}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-purple-800 hover:bg-slate-100"
                 title="بازگشت به پیش‌نمایش"
               >
                 <ArrowRight className="w-4 h-4" />
@@ -628,7 +628,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             <button
               type="button"
               onClick={handleLogout}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/40"
+              className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-950/40"
               title="خروج"
             >
               <LogOut className="w-4 h-4" />
@@ -638,11 +638,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 bg-slate-950 overflow-y-auto">
+      <main className="flex-1 flex flex-col min-w-0 bg-[#f8f7fc] overflow-y-auto">
         {/* Top Breadcrumb Header */}
-        <header className="px-6 py-4 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between shrink-0">
+        <header className="px-6 py-4 bg-white/60 border-b border-purple-150 flex items-center justify-between shrink-0">
           <div>
-            <h2 className="text-sm font-black text-white flex items-center gap-2">
+            <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
               {activeTab === 'overview' && 'داشبورد خلاصه وضعیت'}
               {activeTab === 'domains' && 'مدیریت حوزه‌های پروژه‌های مرکز رشد'}
               {activeTab === 'knowledge' && 'پایگاه دانش استخراج‌شده از وب‌سایت'}
@@ -651,8 +651,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               {activeTab === 'system' && 'بررسی سلامت زیرساخت و سرویس‌ها'}
               {activeTab === 'wordpress' && 'راهنمای نصب و درج در المنتور و وردپرس'}
             </h2>
-            <p className="text-[11px] text-slate-400 mt-0.5">
-              دامنه هدف: <span className="font-mono text-emerald-400">https://yazdinnofaraz.ir/</span>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              دامنه هدف: <span className="font-mono text-purple-700">https://yazdinnofaraz.ir/</span>
             </p>
           </div>
 
@@ -661,9 +661,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               type="button"
               disabled={isSyncing}
               onClick={() => handleTriggerSync(false)}
-              className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-emerald-400' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-purple-700' : ''}`} />
               <span>همگام‌سازی سریع</span>
             </button>
 
@@ -671,7 +671,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               href="/widget"
               target="_blank"
               rel="noreferrer"
-              className="px-3 py-1.5 rounded-xl bg-emerald-600/20 border border-emerald-500/30 text-emerald-300 hover:bg-emerald-600/30 text-xs font-semibold flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-xl bg-purple-700/20 border border-purple-200 text-purple-800 hover:bg-purple-700/30 text-xs font-semibold flex items-center gap-1.5"
             >
               <span>مشاهده ویجت مستقل</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -686,7 +686,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
               {actionError}
             </span>
-            <button onClick={() => setActionError(null)} className="text-slate-400 hover:text-white">
+            <button onClick={() => setActionError(null)} className="text-slate-500 hover:text-purple-800">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -698,31 +698,31 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             <div className="space-y-6">
               {/* Summary Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-                  <span className="text-xs text-slate-400 block mb-1">حوزه‌های پروژه</span>
+                <div className="p-5 rounded-2xl bg-white border border-purple-150">
+                  <span className="text-xs text-slate-500 block mb-1">حوزه‌های پروژه</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-white">{domains.length}</span>
-                    <span className="text-xs text-emerald-400 font-semibold">
+                    <span className="text-2xl font-black text-purple-700">{domains.length}</span>
+                    <span className="text-xs text-purple-700 font-semibold">
                       ({domains.filter((d) => d.active).length} فعال)
                     </span>
                   </div>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-                  <span className="text-xs text-slate-400 block mb-1">صفحات شناسایی‌شده</span>
-                  <span className="text-2xl font-black text-emerald-400">{totalPages}</span>
+                <div className="p-5 rounded-2xl bg-white border border-purple-150">
+                  <span className="text-xs text-slate-500 block mb-1">صفحات شناسایی‌شده</span>
+                  <span className="text-2xl font-black text-purple-700">{totalPages}</span>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-                  <span className="text-xs text-slate-400 block mb-1">پروژه‌های ایندکس‌شده</span>
-                  <span className="text-2xl font-black text-teal-400">
+                <div className="p-5 rounded-2xl bg-white border border-purple-150">
+                  <span className="text-xs text-slate-500 block mb-1">پروژه‌های ایندکس‌شده</span>
+                  <span className="text-2xl font-black text-violet-700">
                     {syncStatus?.totalIndexedProjectPages ?? indexedPages.filter((p) => p.type === 'project').length}
                   </span>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-                  <span className="text-xs text-slate-400 block mb-1">وضعیت دستیار</span>
-                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5 mt-2">
+                <div className="p-5 rounded-2xl bg-white border border-purple-150">
+                  <span className="text-xs text-slate-500 block mb-1">وضعیت دستیار</span>
+                  <span className="text-xs font-bold text-purple-700 flex items-center gap-1.5 mt-2">
                     <CheckCircle2 className="w-4 h-4" />
                     فعال و آماده پاسخگویی
                   </span>
@@ -730,18 +730,18 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               </div>
 
               {/* Status Banner Card */}
-              <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/40 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/40 border border-purple-150 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-base font-extrabold text-white mb-1">
+                  <h3 className="text-base font-extrabold text-slate-900 mb-1">
                     داشبورد مدیریت دستیار مرکز رشد نوفرآز
                   </h3>
-                  <p className="text-xs text-slate-400 leading-relaxed max-w-2xl">
+                  <p className="text-xs text-slate-500 leading-relaxed max-w-2xl">
                     این سامانه به طور خودکار پایگاه دانش را با صفحات رسمی حوزه‌های انرژی، تیم‌ها، فراخوان‌ها و تسهیلات وب‌سایت همگام کرده و مشاور هوشمند پروژه را بر اساس دستورالعمل‌های مدیریتی هدایت می‌کند.
                   </p>
-                  <div className="mt-3 flex items-center gap-4 text-xs text-slate-300">
+                  <div className="mt-3 flex items-center gap-4 text-xs text-slate-700">
                     <span>
                       آخرین همگام‌سازی:{' '}
-                      <span className="font-mono text-emerald-400">
+                      <span className="font-mono text-purple-700">
                         {syncStatus?.lastSyncTime
                           ? new Date(syncStatus.lastSyncTime).toLocaleString('fa-IR')
                           : 'انجام نشده'}
@@ -756,14 +756,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                   <button
                     type="button"
                     onClick={() => setActiveTab('sync')}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md"
+                    className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md"
                   >
                     مدیریت همگام‌سازی
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveTab('wordpress')}
-                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold"
+                    className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold"
                   >
                     کد درج وردپرس
                   </button>
@@ -772,29 +772,29 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 
               {/* Quick Status Grid */}
               <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 block mb-1">احراز هویت گوگل</span>
-                  <span className="text-xs font-bold text-emerald-400">OK</span>
+                <div className="p-3.5 rounded-2xl bg-white/60 border border-purple-150 text-center">
+                  <span className="text-[10px] text-slate-500 block mb-1">احراز هویت گوگل</span>
+                  <span className="text-xs font-bold text-purple-700">OK</span>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 block mb-1">سرویس Gemini</span>
-                  <span className="text-xs font-bold text-emerald-400">OK (3.1-Flash-Lite)</span>
+                <div className="p-3.5 rounded-2xl bg-white/60 border border-purple-150 text-center">
+                  <span className="text-[10px] text-slate-500 block mb-1">سرویس Gemini</span>
+                  <span className="text-xs font-bold text-purple-700">OK (3.1-Flash-Lite)</span>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 block mb-1">دیتابیس Firestore</span>
-                  <span className="text-xs font-bold text-emerald-400">OK</span>
+                <div className="p-3.5 rounded-2xl bg-white/60 border border-purple-150 text-center">
+                  <span className="text-[10px] text-slate-500 block mb-1">دیتابیس Firestore</span>
+                  <span className="text-xs font-bold text-purple-700">OK</span>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 block mb-1">دانش سایت</span>
-                  <span className="text-xs font-bold text-emerald-400">OK ({totalPages} صفحه)</span>
+                <div className="p-3.5 rounded-2xl bg-white/60 border border-purple-150 text-center">
+                  <span className="text-[10px] text-slate-500 block mb-1">دانش سایت</span>
+                  <span className="text-xs font-bold text-purple-700">OK ({totalPages} صفحه)</span>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 block mb-1">همگام‌سازی سایت</span>
-                  <span className="text-xs font-bold text-emerald-400">OK</span>
+                <div className="p-3.5 rounded-2xl bg-white/60 border border-purple-150 text-center">
+                  <span className="text-[10px] text-slate-500 block mb-1">همگام‌سازی سایت</span>
+                  <span className="text-xs font-bold text-purple-700">OK</span>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-center">
-                  <span className="text-[10px] text-slate-400 block mb-1">ویجت وردپرس</span>
-                  <span className="text-xs font-bold text-teal-400">READY</span>
+                <div className="p-3.5 rounded-2xl bg-white/60 border border-purple-150 text-center">
+                  <span className="text-[10px] text-slate-500 block mb-1">ویجت وردپرس</span>
+                  <span className="text-xs font-bold text-violet-700">READY</span>
                 </div>
               </div>
             </div>
@@ -806,11 +806,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               {/* Form */}
               <form
                 onSubmit={handleSaveDomain}
-                className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-4"
+                className="p-5 rounded-2xl bg-white border border-purple-150 space-y-4"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                    {editingDomainId ? <Edit3 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-emerald-400" />}
+                    {editingDomainId ? <Edit3 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-purple-700" />}
                     {editingDomainId ? 'ویرایش حوزه پروژه' : 'افزودن حوزه پروژه جدید (تنها ورود آدرس صفحه اصلی)'}
                   </h3>
                   {editingDomainId && (
@@ -826,7 +826,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                           guidanceText: '',
                         });
                       }}
-                      className="text-xs text-slate-400 hover:text-white"
+                      className="text-xs text-slate-500 hover:text-purple-800"
                     >
                       انصراف از ویرایش
                     </button>
@@ -835,7 +835,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                       عنوان حوزه (مثال: انرژی و بهینه‌سازی)
                     </label>
                     <input
@@ -844,12 +844,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                       value={domainForm.name}
                       onChange={(e) => setDomainForm({ ...domainForm, name: e.target.value })}
                       placeholder="مثلاً: انرژی و بهینه‌سازی"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-[#f8f7fc] border border-purple-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
                     />
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                       آدرس اصلی حوزه در سایت نوفرآز (تنها آدرس اصلی کافیست، زیرصفحات خودکار شناسایی می‌شوند)
                     </label>
                     <input
@@ -858,14 +858,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                       value={domainForm.mainUrl}
                       onChange={(e) => setDomainForm({ ...domainForm, mainUrl: e.target.value })}
                       placeholder="https://yazdinnofaraz.ir/enrgy/"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 dir-ltr font-mono"
+                      className="w-full bg-[#f8f7fc] border border-purple-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-600 dir-ltr font-mono"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div className="md:col-span-3">
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                       راهنمای اختصاصی حوزه برای هوش مصنوعی (اختیاری)
                     </label>
                     <input
@@ -873,12 +873,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                       value={domainForm.guidanceText}
                       onChange={(e) => setDomainForm({ ...domainForm, guidanceText: e.target.value })}
                       placeholder="مثلاً: در این حوزه روی پروژه‌های پایش هوشمند مصرف و تشکیل تیم تأکید کن."
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      className="w-full bg-[#f8f7fc] border border-purple-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
                       اولویت (۱ بالاترین)
                     </label>
                     <input
@@ -887,25 +887,25 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                       max={99}
                       value={domainForm.priority}
                       onChange={(e) => setDomainForm({ ...domainForm, priority: Number(e.target.value) })}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 text-center"
+                      className="w-full bg-[#f8f7fc] border border-purple-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-600 text-center"
                     />
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-300">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
                     <input
                       type="checkbox"
                       checked={domainForm.active}
                       onChange={(e) => setDomainForm({ ...domainForm, active: e.target.checked })}
-                      className="rounded border-slate-700 text-emerald-500"
+                      className="rounded border-purple-200 text-purple-700"
                     />
                     <span>این حوزه فعال باشد و در کشف خودکار پروژه‌ها لحاظ گردد</span>
                   </label>
 
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
                   >
                     <Check className="w-4 h-4" />
                     <span>{editingDomainId ? 'ذخیره تغییرات حوزه' : 'ثبت حوزه در سامانه'}</span>
@@ -914,19 +914,19 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               </form>
 
               {/* Domains Table */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-                <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div className="bg-white border border-purple-150 rounded-2xl overflow-hidden">
+                <div className="p-4 border-b border-purple-150 flex items-center justify-between">
                   <h4 className="font-bold text-xs text-white">
                     فهرست حوزه‌های پیکربندی‌شده ({domains.length})
                   </h4>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-slate-500">
                     مدیریت بدون نیاز به دستکاری کدهای سامانه
                   </span>
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-right text-xs">
-                    <thead className="bg-slate-950/80 text-slate-400 border-b border-slate-800">
+                    <thead className="bg-[#f8f7fc]/80 text-slate-500 border-b border-purple-150">
                       <tr>
                         <th className="p-3 font-semibold">اولویت</th>
                         <th className="p-3 font-semibold">عنوان حوزه</th>
@@ -938,15 +938,15 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                     </thead>
                     <tbody className="divide-y divide-slate-800">
                       {domains.map((d) => (
-                        <tr key={d.id} className="hover:bg-slate-850/50 transition-colors">
-                          <td className="p-3 font-mono font-bold text-slate-300">{d.priority}</td>
-                          <td className="p-3 font-bold text-white">{d.name}</td>
-                          <td className="p-3 font-mono text-[11px] text-slate-400 dir-ltr text-left">
+                        <tr key={d.id} className="hover:bg-purple-50/50/50 transition-colors">
+                          <td className="p-3 font-mono font-bold text-slate-700">{d.priority}</td>
+                          <td className="p-3 font-bold text-slate-900">{d.name}</td>
+                          <td className="p-3 font-mono text-[11px] text-slate-500 dir-ltr text-left">
                             <a
                               href={d.mainUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="hover:text-emerald-400 hover:underline flex items-center gap-1"
+                              className="hover:text-purple-700 hover:underline flex items-center gap-1"
                             >
                               {d.mainUrl}
                               <ExternalLink className="w-3 h-3" />
@@ -958,14 +958,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                               onClick={() => handleToggleDomainActive(d)}
                               className={`px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-colors ${
                                 d.active
-                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                  : 'bg-slate-800 text-slate-500 border border-slate-700'
+                                  ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                                  : 'bg-slate-100 text-slate-500 border border-purple-200'
                               }`}
                             >
                               {d.active ? 'فعال' : 'غیرفعال'}
                             </button>
                           </td>
-                          <td className="p-3 text-slate-300 text-[11px] max-w-xs truncate">
+                          <td className="p-3 text-slate-700 text-[11px] max-w-xs truncate">
                             {d.guidanceText || '—'}
                           </td>
                           <td className="p-3">
@@ -973,7 +973,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                               <button
                                 type="button"
                                 onClick={() => handleEditDomain(d)}
-                                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200"
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700"
                                 title="ویرایش"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
@@ -1001,14 +1001,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
           {activeTab === 'knowledge' && (
             <div className="space-y-6">
               {/* Header & Filter */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-purple-150">
                 <div className="flex items-center gap-3">
-                  <Database className="w-5 h-5 text-emerald-400" />
+                  <Database className="w-5 h-5 text-purple-700" />
                   <div>
                     <h3 className="font-bold text-xs text-white">
                       صفحات استخراج‌شده و ایندکس در پایگاه دانش ({totalPages} صفحه)
                     </h3>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
+                    <p className="text-[11px] text-slate-500 mt-0.5">
                       اطلاعات رسمی وب‌سایت نوفرآز با متادیتای کامل (URL منبع، نوع صفحه، حوزه و زمان ویرایش)
                     </p>
                   </div>
@@ -1016,11 +1016,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 
                 {/* Filter by Domain */}
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400">فیلتر حوزه:</span>
+                  <span className="text-xs text-slate-500">فیلتر حوزه:</span>
                   <select
                     value={selectedDomainFilter}
                     onChange={(e) => setSelectedDomainFilter(e.target.value)}
-                    className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    className="bg-[#f8f7fc] border border-purple-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
                   >
                     <option value="all">همه حوزه‌ها ({indexedPages.length})</option>
                     {domains.map((d) => (
@@ -1033,10 +1033,10 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               </div>
 
               {/* Knowledge Pages Table */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+              <div className="bg-white border border-purple-150 rounded-2xl overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-right text-xs">
-                    <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
+                    <thead className="bg-[#f8f7fc] text-slate-500 border-b border-purple-150">
                       <tr>
                         <th className="p-3 font-semibold">حوزه</th>
                         <th className="p-3 font-semibold">عنوان صفحه</th>
@@ -1048,11 +1048,11 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                     </thead>
                     <tbody className="divide-y divide-slate-800">
                       {filteredIndexedPages.map((page) => (
-                        <tr key={page.id} className="hover:bg-slate-850/50 transition-colors">
-                          <td className="p-3 font-bold text-emerald-400">{page.domain || 'عمومی'}</td>
+                        <tr key={page.id} className="hover:bg-purple-50/50/50 transition-colors">
+                          <td className="p-3 font-bold text-purple-700">{page.domain || 'عمومی'}</td>
                           <td className="p-3 font-medium text-white max-w-xs truncate">{page.title}</td>
                           <td className="p-3">
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-300">
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700">
                               {page.type === 'project_domain'
                                 ? 'حوزه اصلی'
                                 : page.type === 'project'
@@ -1060,21 +1060,21 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                                 : 'محتوای عمومی'}
                             </span>
                           </td>
-                          <td className="p-3 font-mono text-[11px] text-slate-400 dir-ltr text-left">
+                          <td className="p-3 font-mono text-[11px] text-slate-500 dir-ltr text-left">
                             <a
                               href={page.url}
                               target="_blank"
                               rel="noreferrer"
-                              className="hover:text-emerald-400 hover:underline flex items-center gap-1"
+                              className="hover:text-purple-700 hover:underline flex items-center gap-1"
                             >
                               {page.url}
                               <ExternalLink className="w-3 h-3" />
                             </a>
                           </td>
-                          <td className="p-3 font-mono text-slate-400">
+                          <td className="p-3 font-mono text-slate-500">
                             {page.contentLength ? `${Math.round(page.contentLength / 1024)} KB` : '—'}
                           </td>
-                          <td className="p-3 text-[11px] text-slate-400 font-mono">
+                          <td className="p-3 text-[11px] text-slate-500 font-mono">
                             {page.lastModified
                               ? new Date(page.lastModified).toLocaleDateString('fa-IR')
                               : '—'}
@@ -1091,33 +1091,33 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
           {/* SECTION 4: ASSISTANT DIRECTION */}
           {activeTab === 'direction' && (
             <div className="space-y-4">
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 text-xs text-slate-300 leading-relaxed flex items-start gap-3">
-                <Sliders className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="p-5 rounded-2xl bg-white border border-purple-150 text-xs text-slate-700 leading-relaxed flex items-start gap-3">
+                <Sliders className="w-5 h-5 text-purple-700 shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="font-bold text-white text-sm mb-1">
+                  <h3 className="font-bold text-slate-900 text-sm mb-1">
                     تنظیم پویای هدف و جهت‌دهی دستیار هوشمند:
                   </h3>
-                  <p className="text-slate-400">
+                  <p className="text-slate-500">
                     متن زیر به عنوان دستورالعمل اصلی به مدل هوش مصنوعی ارسال می‌شود. هرگونه تغییر در این بخش، بلافاصله در پردازش مکالمات جدید ذخیره و اعمال می‌شود و هیچ نیازی به بیلد یا انتشار مجدد ندارد.
                   </p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-white">
+                <label className="block text-xs font-bold text-slate-900">
                   دستورالعمل و ماموریت رفتاری دستیار:
                 </label>
                 <textarea
                   rows={13}
                   value={directionText}
                   onChange={(e) => setDirectionText(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-xs sm:text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-emerald-500 leading-relaxed font-sans"
+                  className="w-full bg-white border border-purple-200 rounded-2xl p-4 text-xs sm:text-sm text-slate-800 placeholder-slate-600 focus:outline-none focus:border-purple-600 leading-relaxed font-sans"
                 />
               </div>
 
               {directionSuccessMsg && (
-                <div className="p-3 rounded-xl bg-emerald-950/70 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="p-3 rounded-xl bg-emerald-950/70 border border-emerald-800 text-purple-800 text-xs flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-purple-700 shrink-0" />
                   <span>{directionSuccessMsg}</span>
                 </div>
               )}
@@ -1126,7 +1126,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                 <button
                   type="button"
                   onClick={handleResetDirection}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>بازگردانی متن پیش‌فرض</span>
@@ -1136,7 +1136,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                   type="button"
                   disabled={isSavingDirection}
                   onClick={handleSaveDirection}
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                  className="px-5 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-lg transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
                 >
                   {isSavingDirection ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -1154,30 +1154,30 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             <div className="space-y-6">
               {/* Sync Metrics */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center">
-                  <span className="text-[11px] text-slate-400 block mb-1">صفحات تغییرکرده</span>
-                  <span className="text-xl font-extrabold text-white">
+                <div className="p-4 rounded-2xl bg-white border border-purple-150 text-center">
+                  <span className="text-[11px] text-slate-500 block mb-1">صفحات تغییرکرده</span>
+                  <span className="text-xl font-extrabold text-slate-900">
                     {syncStatus?.changedPagesCount ?? 0}
                   </span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center">
-                  <span className="text-[11px] text-slate-400 block mb-1">صفحات حذف‌شده</span>
-                  <span className="text-xl font-extrabold text-slate-300">
+                <div className="p-4 rounded-2xl bg-white border border-purple-150 text-center">
+                  <span className="text-[11px] text-slate-500 block mb-1">صفحات حذف‌شده</span>
+                  <span className="text-xl font-extrabold text-slate-700">
                     {syncStatus?.removedPagesCount ?? 0}
                   </span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center">
-                  <span className="text-[11px] text-slate-400 block mb-1">حوزه‌های فعال تحت پایش</span>
-                  <span className="text-xl font-extrabold text-emerald-400">
+                <div className="p-4 rounded-2xl bg-white border border-purple-150 text-center">
+                  <span className="text-[11px] text-slate-500 block mb-1">حوزه‌های فعال تحت پایش</span>
+                  <span className="text-xl font-extrabold text-purple-700">
                     {syncStatus?.totalActiveDomains ?? domains.filter((d) => d.active).length}
                   </span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 text-center">
-                  <span className="text-[11px] text-slate-400 block mb-1">وضعیت آخرین عملیات</span>
-                  <span className="text-xs font-bold text-emerald-400 flex items-center justify-center gap-1 mt-1">
+                <div className="p-4 rounded-2xl bg-white border border-purple-150 text-center">
+                  <span className="text-[11px] text-slate-500 block mb-1">وضعیت آخرین عملیات</span>
+                  <span className="text-xs font-bold text-purple-700 flex items-center justify-center gap-1 mt-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     موفق
                   </span>
@@ -1185,13 +1185,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               </div>
 
               {/* Action Box */}
-              <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+              <div className="p-6 rounded-3xl bg-white border border-purple-150 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h4 className="font-extrabold text-sm text-white">
                       عملیات همگام‌سازی و بازسازی پایگاه دانش
                     </h4>
-                    <p className="text-xs text-slate-400 mt-1 max-w-xl">
+                    <p className="text-xs text-slate-500 mt-1 max-w-xl">
                       «همگام‌سازی عادی» صفحات حوزه‌ها را بررسی کرده و صرفاً تغییرات جدید را بروز می‌کند. «بازسازی کامل» تمام ایندکس‌های قبلی را ریست و همه صفحات را از نو پردازش می‌نماید.
                     </p>
                   </div>
@@ -1201,7 +1201,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                       type="button"
                       disabled={isSyncing}
                       onClick={() => handleTriggerSync(false)}
-                      className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                      className="px-4 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
                       <span>همگام‌سازی عادی</span>
@@ -1211,7 +1211,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                       type="button"
                       disabled={isSyncing}
                       onClick={() => setShowFullRebuildConfirm(true)}
-                      className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-rose-950 hover:border-rose-700 border border-slate-700 text-slate-200 hover:text-rose-200 font-semibold text-xs transition-all cursor-pointer disabled:opacity-50"
+                      className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-rose-950 hover:border-rose-700 border border-purple-200 text-slate-700 hover:text-rose-200 font-semibold text-xs transition-all cursor-pointer disabled:opacity-50"
                     >
                       بازسازی کامل دانش سایت
                     </button>
@@ -1224,14 +1224,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                       <AlertTriangle className="w-4 h-4 text-rose-400" />
                       <span>تأیید بازسازی کامل پایگاه دانش سایت</span>
                     </div>
-                    <p className="text-slate-300 leading-relaxed">
+                    <p className="text-slate-700 leading-relaxed">
                       این فرآیند تمام صفحات ذخیره‌شده را از ابتدا خزش و ایندکس‌گذاری مجدد می‌کند. آیا اطمینان دارید؟
                     </p>
                     <div className="flex items-center gap-2 justify-end">
                       <button
                         type="button"
                         onClick={() => setShowFullRebuildConfirm(false)}
-                        className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs"
+                        className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs"
                       >
                         انصراف
                       </button>
@@ -1247,8 +1247,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                 )}
 
                 {syncMessage && (
-                  <div className="p-3 rounded-xl bg-emerald-950/70 border border-emerald-800 text-emerald-300 text-xs flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <div className="p-3 rounded-xl bg-emerald-950/70 border border-emerald-800 text-purple-800 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-purple-700 shrink-0" />
                     <span>{syncMessage}</span>
                   </div>
                 )}
@@ -1260,54 +1260,54 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
           {activeTab === 'system' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <div className="p-5 rounded-2xl bg-white border border-purple-150 space-y-3">
                   <h4 className="font-bold text-xs text-white flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <ShieldCheck className="w-4 h-4 text-purple-700" />
                     <span>سرویس احراز هویت (Authentication)</span>
                   </h4>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500">
                     ورود کاربران عادی با Google Sign-In فعال است و نشست‌ها با Firebase ID Token به صورت سروری اعتبارسنجی می‌شوند.
                   </p>
-                  <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
                     وضعیت: OK
                   </span>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <div className="p-5 rounded-2xl bg-white border border-purple-150 space-y-3">
                   <h4 className="font-bold text-xs text-white flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-emerald-400" />
+                    <Sparkles className="w-4 h-4 text-purple-700" />
                     <span>هوش مصنوعی Gemini (LLM API)</span>
                   </h4>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500">
                     مدل Gemini 3.1 Flash-Lite با قابلیت استریم بی‌وقفه و پاسخ به زبان فارسی پیکربندی شده است.
                   </p>
-                  <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
                     وضعیت: OK (کلید فعال در سرور)
                   </span>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <div className="p-5 rounded-2xl bg-white border border-purple-150 space-y-3">
                   <h4 className="font-bold text-xs text-white flex items-center gap-2">
-                    <Database className="w-4 h-4 text-emerald-400" />
+                    <Database className="w-4 h-4 text-purple-700" />
                     <span>پایگاه داده Firestore</span>
                   </h4>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500">
                     قواعد امنیتی Firestore ذخیره گفتگوها را به شناسه اختصاصی هر کاربر محدود کرده‌اند و پایداری سوابق چت تضمین شده است.
                   </p>
-                  <span className="inline-block px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold border border-emerald-500/20">
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-xs font-bold border border-purple-200">
                     وضعیت: OK
                   </span>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <div className="p-5 rounded-2xl bg-white border border-purple-150 space-y-3">
                   <h4 className="font-bold text-xs text-white flex items-center gap-2">
-                    <Code2 className="w-4 h-4 text-teal-400" />
+                    <Code2 className="w-4 h-4 text-violet-700" />
                     <span>ویجت مستقل (Embeddable Widget)</span>
                   </h4>
-                  <p className="text-xs text-slate-400">
-                    مسیر اختصاصی <span className="font-mono text-emerald-400">/widget</span> با تنظیمات CSP frame-ancestors برای درج در سایت نوفرآز آماده است.
+                  <p className="text-xs text-slate-500">
+                    مسیر اختصاصی <span className="font-mono text-purple-700">/widget</span> با تنظیمات CSP frame-ancestors برای درج در سایت نوفرآز آماده است.
                   </p>
-                  <span className="inline-block px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 text-xs font-bold border border-teal-500/20">
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 text-xs font-bold border border-teal-500/20">
                     وضعیت: READY
                   </span>
                 </div>
@@ -1318,20 +1318,20 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
           {/* SECTION 7: WORDPRESS & ELEMENTOR INTEGRATION */}
           {activeTab === 'wordpress' && (
             <div className="space-y-6">
-              <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+              <div className="p-5 rounded-2xl bg-white border border-purple-150 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-extrabold text-sm text-white">
                       راهنمای درج دستیار در وردپرس و المنتور (WordPress & Elementor)
                     </h3>
-                    <p className="text-xs text-slate-400 mt-1">
+                    <p className="text-xs text-slate-500 mt-1">
                       مدیر سایت وردپرس بدون نیاز به هیچ کلید API یا تنظیمات سروری، تنها با درج کد زیر دستیار را فعال می‌کند.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={handleCopyEmbedCode}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
                   >
                     {copiedCode ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     <span>{copiedCode ? 'کپی شد!' : 'کپی کد درج وردپرس'}</span>
@@ -1339,20 +1339,20 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                 </div>
 
                 {/* Host Source Selector */}
-                <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-3">
-                  <span className="text-xs font-bold text-slate-300 block">انتخاب دامنه و میزبان ویجت:</span>
+                <div className="p-4 rounded-xl bg-[#f8f7fc] border border-purple-150 space-y-3">
+                  <span className="text-xs font-bold text-slate-700 block">انتخاب دامنه و میزبان ویجت:</span>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => setEmbedHostOption('shared')}
                       className={`p-3 rounded-xl border text-right transition-all cursor-pointer ${
                         embedHostOption === 'shared'
-                          ? 'border-emerald-500 bg-emerald-500/10 text-white'
-                          : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700'
+                          ? 'border-purple-600 bg-purple-50 text-white'
+                          : 'border-purple-150 bg-white text-slate-500 hover:border-purple-200'
                       }`}
                     >
-                      <span className="block text-xs font-bold text-emerald-400">دامنه عمومی ابری (پیش‌فرض)</span>
-                      <span className="block text-[10px] text-slate-400 mt-0.5 dir-ltr truncate">ais-pre-...run.app</span>
+                      <span className="block text-xs font-bold text-purple-700">دامنه عمومی ابری (پیش‌فرض)</span>
+                      <span className="block text-[10px] text-slate-500 mt-0.5 dir-ltr truncate">ais-pre-...run.app</span>
                     </button>
 
                     <button
@@ -1360,12 +1360,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                       onClick={() => setEmbedHostOption('current')}
                       className={`p-3 rounded-xl border text-right transition-all cursor-pointer ${
                         embedHostOption === 'current'
-                          ? 'border-emerald-500 bg-emerald-500/10 text-white'
-                          : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700'
+                          ? 'border-purple-600 bg-purple-50 text-white'
+                          : 'border-purple-150 bg-white text-slate-500 hover:border-purple-200'
                       }`}
                     >
                       <span className="block text-xs font-bold text-amber-400">دامنه جاری مرورگر</span>
-                      <span className="block text-[10px] text-slate-400 mt-0.5 dir-ltr truncate">{currentOrigin}</span>
+                      <span className="block text-[10px] text-slate-500 mt-0.5 dir-ltr truncate">{currentOrigin}</span>
                     </button>
 
                     <button
@@ -1373,24 +1373,24 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                       onClick={() => setEmbedHostOption('custom')}
                       className={`p-3 rounded-xl border text-right transition-all cursor-pointer ${
                         embedHostOption === 'custom'
-                          ? 'border-emerald-500 bg-emerald-500/10 text-white'
-                          : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700'
+                          ? 'border-purple-600 bg-purple-50 text-white'
+                          : 'border-purple-150 bg-white text-slate-500 hover:border-purple-200'
                       }`}
                     >
                       <span className="block text-xs font-bold text-cyan-400">دامنه اختصاصی خودتان</span>
-                      <span className="block text-[10px] text-slate-400 mt-0.5">مانند assistant.yazdinnofaraz.ir</span>
+                      <span className="block text-[10px] text-slate-500 mt-0.5">مانند assistant.yazdinnofaraz.ir</span>
                     </button>
                   </div>
 
                   {embedHostOption === 'custom' && (
                     <div className="pt-2">
-                      <label className="text-[11px] text-slate-400 block mb-1">آدرس دامنه اختصاصی شما (با https://):</label>
+                      <label className="text-[11px] text-slate-500 block mb-1">آدرس دامنه اختصاصی شما (با https://):</label>
                       <input
                         type="url"
                         placeholder="https://assistant.yazdinnofaraz.ir"
                         value={customHost}
                         onChange={(e) => setCustomHost(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-xs text-white font-mono dir-ltr focus:outline-none focus:border-cyan-500"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-purple-200 text-xs text-white font-mono dir-ltr focus:outline-none focus:border-cyan-500"
                       />
                     </div>
                   )}
@@ -1402,21 +1402,21 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                     <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
                     <span>علت خطای ۴۰۳ (Access Denied) در لینک‌های ais-dev و نحوه رفع آن:</span>
                   </div>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    گوگل آدرس‌های با پیشوند <code className="text-amber-300 font-mono bg-slate-900 px-1 py-0.5 rounded">ais-dev-</code> را به عنوان محیط توسعه خصوصی برنامه‌نویس قفل می‌کند و اجازه باز شدن آن توسط سایر کاربران یا بازدیدکنندگان وردپرس را نمی‌دهد.
+                  <p className="text-[11px] text-slate-700 leading-relaxed">
+                    گوگل آدرس‌های با پیشوند <code className="text-amber-300 font-mono bg-white px-1 py-0.5 rounded">ais-dev-</code> را به عنوان محیط توسعه خصوصی برنامه‌نویس قفل می‌کند و اجازه باز شدن آن توسط سایر کاربران یا بازدیدکنندگان وردپرس را نمی‌دهد.
                   </p>
-                  <p className="text-[11px] text-emerald-300 leading-relaxed font-semibold">
+                  <p className="text-[11px] text-purple-800 leading-relaxed font-semibold">
                     برای اینکه کاربران سایت شما مستقیماً و بدون هیچ اروری به ویجت دسترسی داشته باشند، کافیست در بالای همین صفحه استودیو روی دکمه <span className="bg-emerald-900/60 px-1.5 py-0.5 rounded border border-emerald-700">Share (اشتراک‌گذاری)</span> کلیک کنید تا نسخه عمومی <code className="text-white font-mono">ais-pre-</code> فعال شود. کد درج شده در جعبه بالا به صورت خودکار از دامنه عمومی استفاده می‌کند.
                   </p>
                 </div>
 
                 <div className="space-y-2 pt-2">
-                  <div className="flex items-center justify-between text-xs text-slate-400">
+                  <div className="flex items-center justify-between text-xs text-slate-500">
                     <span>آدرس اختصاصی ویجت:</span>
-                    <span className="font-mono text-emerald-400 dir-ltr">{widgetUrl}</span>
+                    <span className="font-mono text-purple-700 dir-ltr">{widgetUrl}</span>
                   </div>
 
-                  <pre className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-300 overflow-x-auto dir-ltr">
+                  <pre className="bg-[#f8f7fc] p-4 rounded-xl border border-purple-150 text-[11px] font-mono text-slate-700 overflow-x-auto dir-ltr">
                     {wordpressEmbedCode}
                   </pre>
                 </div>
@@ -1424,9 +1424,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 
               {/* Instructions */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <div className="p-5 rounded-2xl bg-white border border-purple-150 space-y-3">
                   <h4 className="font-bold text-xs text-white">مراحل درج در المنتور (Elementor):</h4>
-                  <ol className="list-decimal list-inside text-xs text-slate-300 space-y-2 leading-relaxed">
+                  <ol className="list-decimal list-inside text-xs text-slate-700 space-y-2 leading-relaxed">
                     <li>وارد پیشخوان وردپرس شده و برگه یا فوتر سراسری (Footer Template) را با المنتور باز کنید.</li>
                     <li>ویجت «کد HTML» (HTML Widget) را به قالب اضافه کنید.</li>
                     <li>کد بالا را کپی کرده و درون فیلد کد المنتور جای‌گذاری کنید.</li>
@@ -1434,19 +1434,19 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                   </ol>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-3">
+                <div className="p-5 rounded-2xl bg-white border border-purple-150 space-y-3">
                   <h4 className="font-bold text-xs text-white">رفتار در دسکتاپ و موبایل:</h4>
-                  <ul className="text-xs text-slate-300 space-y-2 leading-relaxed">
+                  <ul className="text-xs text-slate-700 space-y-2 leading-relaxed">
                     <li>
-                      <span className="font-bold text-white">• دسکتاپ: </span>
+                      <span className="font-bold text-slate-900">• دسکتاپ: </span>
                       پنل اسلایدی در سمت راست صفحه با عرض ۴۴۰ پیکسل و ارتفاع تمام‌صفحه باز می‌شود و محتوای سایت نوفرآز همچنان قابل مشاهده است.
                     </li>
                     <li>
-                      <span className="font-bold text-white">• موبایل: </span>
+                      <span className="font-bold text-slate-900">• موبایل: </span>
                       به صورت باتم‌شیت (Bottom Sheet) مدرن با اشغال حدود ۴۰٪ پایین صفحه باز می‌شود، کاربر حدود ۶۰٪ صفحه وب را می‌بیند و لیست پیام‌ها به طور مستقل اسکرول می‌خورد.
                     </li>
                     <li>
-                      <span className="font-bold text-white">• انتقال بافت صفحه: </span>
+                      <span className="font-bold text-slate-900">• انتقال بافت صفحه: </span>
                       آدرس دقیق صفحه‌ای که کاربر در حال حاضر در وردپرس مشاهده می‌کند، به عنوان بافت پروژه به مشاور هوشمند پاس داده می‌شود.
                     </li>
                   </ul>

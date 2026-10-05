@@ -482,7 +482,7 @@ export default function App() {
   // 2. Standalone Embeddable Widget Route (/widget)
   if (currentPath === '/widget') {
     return (
-      <div dir="rtl" className="w-full h-full min-h-screen bg-slate-950 font-sans text-slate-100 flex flex-col justify-end sm:justify-start">
+      <div dir="rtl" className="w-full h-full min-h-screen bg-[#f8f7fc] font-sans text-slate-800 flex flex-col justify-end sm:justify-start">
         <AssistantWidget
           isOpen={true}
           onToggle={() => {}}
@@ -514,7 +514,7 @@ export default function App() {
 
   // 3. Default Website Preview Experience (/)
   return (
-    <div dir="rtl" className="relative min-h-screen bg-slate-950 font-sans overflow-x-hidden">
+    <div dir="rtl" className="relative min-h-screen bg-[#f8f7fc] font-sans overflow-x-hidden text-slate-800">
       {/* Simulated Live Backdrop for https://yazdinnofaraz.ir/ */}
       <GrowthCenterBackdrop
         currentUrl={currentPageUrl}

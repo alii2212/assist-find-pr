@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import { Router, type Request, type Response } from 'express';
 import { streamProjectAdvisor } from './geminiService.ts';
 import { verifyFirebaseToken, isUserAdmin } from './authMiddleware.ts';
 import { checkRateLimit } from './rateLimiter.ts';

@@ -148,14 +148,14 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
         <button
           onClick={onToggle}
           type="button"
-          className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-2xl shadow-emerald-500/30 transition-all hover:scale-105 active:scale-95 cursor-pointer border border-emerald-400/30 group"
+          className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-purple-700 via-violet-700 to-indigo-700 hover:from-purple-800 hover:to-violet-800 text-white font-bold text-xs shadow-2xl shadow-purple-700/30 transition-all hover:scale-105 active:scale-95 cursor-pointer border border-purple-400/30 group"
           title="باز کردن مشاور هوشمند انتخاب پروژه"
         >
           <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0 group-hover:rotate-12 transition-transform">
             <Sparkles className="w-4 h-4" />
           </div>
           <div className="text-right">
-            <div className="text-[10px] text-emerald-200 font-medium">دانشگاه یزد</div>
+            <div className="text-[10px] text-purple-200 font-medium">دانشگاه یزد</div>
             <div className="text-xs font-extrabold text-white">مشاور هوشمند انتخاب پروژه</div>
           </div>
         </button>
@@ -165,7 +165,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
       {isOpen && (
         <div
           onClick={onToggle}
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity"
+          className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-[2px] transition-opacity"
         />
       )}
 
@@ -173,17 +173,17 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
       {isOpen && (
         <div
           dir="rtl"
-          className={`fixed z-50 flex flex-col bg-slate-950 border-slate-800 shadow-2xl transition-all font-sans text-slate-100 ${
+          className={`fixed z-50 flex flex-col bg-white border-purple-200 shadow-2xl transition-all font-sans text-slate-800 ${
             isStandaloneRoute
               ? 'inset-0 h-full w-full rounded-none border-none'
               : 'bottom-0 right-0 h-[40vh] w-full rounded-t-3xl border-t sm:h-screen sm:w-[440px] sm:rounded-none sm:border-l sm:border-t-0'
           }`}
         >
           {/* Header Bar */}
-          <div className="px-4 py-3.5 border-b border-slate-800 bg-slate-900/90 flex items-center justify-between gap-2 shrink-0">
+          <div className="px-4 py-3.5 border-b border-purple-900/20 bg-gradient-to-r from-purple-800 via-violet-800 to-indigo-900 text-white flex items-center justify-between gap-2 shrink-0 shadow-xs">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-bold shrink-0 shadow-sm">
-                <Bot className="w-5 h-5 text-slate-950" />
+              <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white font-bold shrink-0 shadow-xs">
+                <Bot className="w-5 h-5 text-white" />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
@@ -191,7 +191,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                     مشاور انتخاب پروژه نوفرآز
                   </h2>
                 </div>
-                <p className="text-[10px] text-emerald-400 truncate">
+                <p className="text-[10px] text-purple-200 truncate">
                   {activeChat?.title || 'گفتگوی فعال'}
                 </p>
               </div>
@@ -203,7 +203,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
               <button
                 type="button"
                 onClick={onNewChat}
-                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-purple-100 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 title="شروع گفتگوی جدید"
               >
                 <Plus className="w-4 h-4" />
@@ -213,12 +213,12 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
               <button
                 type="button"
                 onClick={() => setIsDrawerOpen(true)}
-                className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer relative"
+                className="p-1.5 rounded-lg text-purple-100 hover:text-white hover:bg-white/10 transition-colors cursor-pointer relative"
                 title="مشاهده تمام گفتگوها"
               >
                 <MessageSquare className="w-4 h-4" />
                 {chats.length > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-purple-300" />
                 )}
               </button>
 
@@ -227,7 +227,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                 <button
                   type="button"
                   onClick={onOpenAdminPanel}
-                  className="p-1.5 rounded-lg text-emerald-400 hover:text-white hover:bg-emerald-500/20 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-purple-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                   title="مدیریت دانش سایت (ویژه مدیران)"
                 >
                   <Database className="w-4 h-4" />
@@ -239,7 +239,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                 <button
                   type="button"
                   onClick={onLogout}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-purple-200 hover:text-rose-300 hover:bg-white/10 transition-colors cursor-pointer"
                   title="خروج از حساب"
                 >
                   <LogOut className="w-3.5 h-3.5" />
@@ -250,7 +250,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
               <button
                 type="button"
                 onClick={onToggle}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer mr-1"
+                className="p-1.5 rounded-lg text-purple-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer mr-1"
                 title="بستن دستیار"
               >
                 <X className="w-4 h-4" />
@@ -259,16 +259,16 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
           </div>
 
           {/* Current Page Context Indicator Banner */}
-          <div className="px-4 py-1.5 bg-slate-900/40 border-b border-slate-800/60 flex items-center justify-between text-[10px] text-slate-400 shrink-0">
+          <div className="px-4 py-1.5 bg-purple-50/80 border-b border-purple-100 flex items-center justify-between text-[10px] text-slate-600 shrink-0">
             <span className="flex items-center gap-1 truncate">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
-              صفحه منبع: <span className="text-slate-300 font-mono truncate">{currentPageUrl}</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-600 shrink-0" />
+              صفحه منبع: <span className="text-purple-900 font-mono font-medium truncate">{currentPageUrl}</span>
             </span>
           </div>
 
           {/* Candidate Profile Summary Tag (if user has provided skills) */}
           {activeChat?.candidateProfile?.technicalSkills && activeChat.candidateProfile.technicalSkills.length > 0 && (
-            <div className="px-4 py-1.5 bg-emerald-950/30 border-b border-emerald-900/40 flex items-center justify-between text-[10px] text-emerald-300 shrink-0">
+            <div className="px-4 py-1.5 bg-purple-100/70 border-b border-purple-200 flex items-center justify-between text-[10px] text-purple-900 font-medium shrink-0">
               <span className="truncate">
                 شناخت داوطلب: {activeChat.candidateProfile.fieldOfStudy ? `${activeChat.candidateProfile.fieldOfStudy} • ` : ''}
                 {activeChat.candidateProfile.technicalSkills.join(', ')}
@@ -277,22 +277,22 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
           )}
 
           {/* Messages Scroll Body */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#faf9fe]">
             {messages.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center p-4 text-slate-400">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-3">
+              <div className="h-full flex flex-col items-center justify-center text-center p-4 text-slate-500">
+                <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3 shadow-xs">
                   <Sparkles className="w-6 h-6" />
                 </div>
-                <h4 className="font-bold text-sm text-slate-200 mb-1">
+                <h4 className="font-bold text-sm text-slate-900 mb-1">
                   سلام! چطور می‌توانم در انتخاب پروژه به شما کمک کنم؟
                 </h4>
-                <p className="text-xs text-slate-400 max-w-xs leading-relaxed mb-4">
+                <p className="text-xs text-slate-600 max-w-xs leading-relaxed mb-4">
                   رشته تحصیلی، مهارت‌ها یا سوابق خود را بنویسید تا مناسب‌ترین پروژه‌های فعال مرکز رشد نوفرآز را به شما معرفی کنم.
                 </p>
 
                 {/* Initial suggested questions */}
                 <div className="w-full space-y-1.5 text-right">
-                  <span className="text-[11px] font-semibold text-slate-400 block px-1">
+                  <span className="text-[11px] font-semibold text-purple-900 block px-1">
                     پیشنهاد شروع:
                   </span>
                   {suggestedQuestions.slice(0, 3).map((q, idx) => (
@@ -300,10 +300,10 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                       key={idx}
                       type="button"
                       onClick={() => setInputText(q)}
-                      className="w-full text-right p-2 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-[11px] text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center justify-between group"
+                      className="w-full text-right p-2.5 rounded-xl bg-white hover:bg-purple-50/80 border border-purple-100 text-[11px] text-slate-700 hover:text-purple-950 hover:border-purple-200 transition-colors cursor-pointer flex items-center justify-between group shadow-xs"
                     >
                       <span className="line-clamp-1">{q}</span>
-                      <ArrowUpLeft className="w-3 h-3 text-slate-500 group-hover:text-emerald-400 shrink-0 mr-1" />
+                      <ArrowUpLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-purple-700 shrink-0 mr-1" />
                     </button>
                   ))}
                 </div>
@@ -320,10 +320,10 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                   >
                     {/* Role Avatar */}
                     <div
-                      className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 text-xs shadow-sm mt-0.5 ${
+                      className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 text-xs shadow-xs mt-0.5 ${
                         isUser
-                          ? 'bg-slate-700 text-slate-200'
-                          : 'bg-emerald-600 text-white font-bold'
+                          ? 'bg-purple-700 text-white'
+                          : 'bg-slate-800 text-white font-bold'
                       }`}
                     >
                       {isUser ? <User className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
@@ -336,17 +336,17 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                       }`}
                     >
                       <div
-                        className={`rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap transition-all shadow-sm ${
+                        className={`rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed whitespace-pre-wrap transition-all shadow-xs ${
                           isUser
-                            ? 'bg-emerald-600 text-white rounded-tr-sm'
+                            ? 'bg-gradient-to-r from-purple-700 to-violet-700 text-white rounded-tr-xs shadow-sm'
                             : message.isError
-                            ? 'bg-rose-950/60 text-rose-200 border border-rose-800/60 rounded-tl-sm'
-                            : 'bg-slate-850 text-slate-100 border border-slate-700/60 rounded-tl-sm'
+                            ? 'bg-rose-50 text-rose-800 border border-rose-200 rounded-tl-xs'
+                            : 'bg-white text-slate-800 border border-purple-150 rounded-tl-xs shadow-xs'
                         }`}
                       >
                         {message.content}
                         {message.isStreaming && (
-                          <span className="inline-block w-1.5 h-3.5 mr-1 bg-emerald-400 animate-pulse align-middle" />
+                          <span className="inline-block w-1.5 h-3.5 mr-1 bg-purple-600 animate-pulse align-middle" />
                         )}
                       </div>
 
@@ -376,7 +376,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                               href={s.url}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-0.5 text-[10px] text-emerald-400 hover:text-emerald-300 hover:underline"
+                              className="inline-flex items-center gap-0.5 text-[10px] text-purple-700 hover:text-purple-900 hover:underline font-medium"
                             >
                               <span>{s.title}</span>
                               <ExternalLink className="w-2.5 h-2.5" />
@@ -386,7 +386,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                       )}
 
                       {/* Copy Action & Timestamp */}
-                      <div className="flex items-center gap-2 mt-1 px-1 text-[10px] text-slate-500">
+                      <div className="flex items-center gap-2 mt-1 px-1 text-[10px] text-slate-400">
                         <span>
                           {new Date(message.timestamp).toLocaleTimeString('fa-IR', {
                             hour: '2-digit',
@@ -397,10 +397,10 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                           <button
                             type="button"
                             onClick={() => handleCopy(message.id, message.content)}
-                            className="hover:text-slate-200 flex items-center gap-0.5 cursor-pointer"
+                            className="hover:text-purple-700 flex items-center gap-0.5 cursor-pointer transition-colors"
                           >
                             {copiedId === message.id ? (
-                              <span className="text-emerald-400 flex items-center gap-0.5">
+                              <span className="text-purple-700 flex items-center gap-0.5 font-medium">
                                 <Check className="w-2.5 h-2.5" /> کپی شد
                               </span>
                             ) : (
@@ -420,16 +420,16 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
             {/* Waiting for response indicator */}
             {isStreaming && messages.length > 0 && messages[messages.length - 1].role === 'user' && (
               <div className="flex gap-2 items-start">
-                <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-xl bg-slate-800 text-white flex items-center justify-center shrink-0">
                   <Bot className="w-3.5 h-3.5" />
                 </div>
-                <div className="bg-slate-850 border border-slate-700/60 rounded-2xl rounded-tl-sm px-3.5 py-2 flex items-center gap-2 text-xs text-emerald-400">
+                <div className="bg-white border border-purple-150 rounded-2xl rounded-tl-xs px-3.5 py-2 flex items-center gap-2 text-xs text-purple-700 shadow-xs">
                   <div className="flex gap-1">
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce" />
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.2s]" />
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-bounce [animation-delay:0.4s]" />
+                    <span className="w-1.5 h-1.5 bg-purple-600 rounded-full animate-bounce" />
+                    <span className="w-1.5 h-1.5 bg-purple-600 rounded-full animate-bounce [animation-delay:0.2s]" />
+                    <span className="w-1.5 h-1.5 bg-purple-600 rounded-full animate-bounce [animation-delay:0.4s]" />
                   </div>
-                  <span className="text-slate-300 text-[11px]">در حال تحلیل و جستجو در سایت نوفرآز...</span>
+                  <span className="text-slate-600 text-[11px]">در حال تحلیل و جستجو در سایت نوفرآز...</span>
                 </div>
               </div>
             )}
@@ -439,15 +439,15 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
 
           {/* Error Alert Bar */}
           {currentError && (
-            <div className="px-3 py-2 mx-3 mb-2 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-200 flex items-center justify-between text-xs shrink-0">
+            <div className="px-3 py-2 mx-3 mb-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 flex items-center justify-between text-xs shrink-0">
               <div className="flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
                 <span>{currentError}</span>
               </div>
               <button
                 type="button"
                 onClick={onDismissError}
-                className="text-slate-400 hover:text-white px-1.5 cursor-pointer"
+                className="text-slate-500 hover:text-slate-800 px-1.5 cursor-pointer font-medium"
               >
                 بستن
               </button>
@@ -455,20 +455,20 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
           )}
 
           {/* Input & Footer Controls */}
-          <div className="p-3 bg-slate-900 border-t border-slate-800 shrink-0">
+          <div className="p-3 bg-white border-t border-purple-100 shrink-0">
             {!isAuthenticated && !isLoadingAuth ? (
               /* Auth Required Notice */
-              <div className="rounded-xl bg-slate-950 p-3 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+              <div className="rounded-xl bg-purple-50/70 p-3 border border-purple-200 flex flex-col sm:flex-row items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2 text-right">
-                  <Lock className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span className="text-xs text-slate-300 font-medium">
+                  <Lock className="w-4 h-4 text-purple-700 shrink-0" />
+                  <span className="text-xs text-slate-700 font-medium">
                     برای مشاوره و انتخاب پروژه، با Google وارد شوید.
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={onLogin}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-bold text-slate-950 bg-white hover:bg-slate-100 active:scale-95 px-3 py-1.5 rounded-lg shadow transition-all cursor-pointer font-sans shrink-0"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-bold text-slate-800 bg-white hover:bg-slate-50 active:scale-95 px-3 py-1.5 rounded-lg border border-slate-200 shadow-xs transition-all cursor-pointer font-sans shrink-0"
                 >
                   <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.15z" />
@@ -482,12 +482,12 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
             ) : (
               /* Chat Input Box */
               <div className="space-y-2">
-                <div className="relative flex items-end gap-2 bg-slate-950 border border-slate-800 focus-within:border-emerald-500/60 rounded-xl p-2 transition-all">
+                <div className="relative flex items-end gap-2 bg-slate-50/80 border border-purple-200 focus-within:border-purple-600 focus-within:bg-white focus-within:ring-2 focus-within:ring-purple-100 rounded-xl p-2 transition-all">
                   {/* Resume Upload Action Button */}
                   <button
                     type="button"
                     onClick={() => setIsResumeModalOpen(true)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-slate-800 transition-colors shrink-0 cursor-pointer"
+                    className="p-1.5 rounded-lg text-slate-500 hover:text-purple-700 hover:bg-purple-50 transition-colors shrink-0 cursor-pointer"
                     title="بارگذاری رزومه PDF یا متن سوابق"
                   >
                     <FileUp className="w-4 h-4" />
@@ -502,14 +502,14 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                     placeholder="رشته، مهارت‌ها یا سوال خود درباره پروژه‌ها را بنویسید..."
                     rows={1}
                     maxLength={2000}
-                    className="w-full bg-transparent text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none px-1 py-1 max-h-[120px] leading-relaxed disabled:opacity-50"
+                    className="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none resize-none px-1 py-1 max-h-[120px] leading-relaxed disabled:opacity-50"
                   />
 
                   <button
                     type="button"
                     onClick={handleSend}
                     disabled={!inputText.trim() || isStreaming || !isAuthenticated}
-                    className="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white disabled:opacity-30 disabled:hover:bg-emerald-600 disabled:cursor-not-allowed transition-all shadow shrink-0 cursor-pointer"
+                    className="p-2 rounded-lg bg-purple-700 hover:bg-purple-800 active:scale-95 text-white disabled:opacity-30 disabled:hover:bg-purple-700 disabled:cursor-not-allowed transition-all shadow-sm shadow-purple-700/20 shrink-0 cursor-pointer"
                     title="ارسال پیام"
                   >
                     {isStreaming ? (
@@ -520,7 +520,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] text-slate-500 px-1">
+                <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
                   <span>Enter برای ارسال • بارگذاری رزومه با دکمه پیوست</span>
                   <span>{inputText.length}/۲۰۰۰</span>
                 </div>

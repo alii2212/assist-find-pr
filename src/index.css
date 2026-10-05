@@ -7,11 +7,11 @@
   }
 
   body {
-    background-color: #020617;
-    color: #f8fafc;
+    background-color: #f8f7fc;
+    color: #1e1b4b;
   }
 
-  /* Custom scrollbar for modern chat appearance */
+  /* Custom scrollbar for modern white-purple theme */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -20,10 +20,10 @@
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: #334155;
+    background: #cbd5e1;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #475569;
+    background: #a855f7;
   }
 }
