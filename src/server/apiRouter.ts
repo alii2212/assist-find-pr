@@ -41,6 +41,63 @@ apiRouter.use((req: Request, res: Response, next) => {
   next();
 });
 
+// --------------------------------------------------------------------
+// Anti-Sanction Proxies for Firebase (Bypasses Iran IP blocks from Google)
+// --------------------------------------------------------------------
+apiRouter.all(['/proxy-identitytoolkit*', '/proxy-securetoken*', '/proxy-firestore*'], async (req: Request, res: Response) => {
+  try {
+    let targetHost = 'https://identitytoolkit.googleapis.com';
+    let pathPrefix = '/proxy-identitytoolkit';
+
+    if (req.originalUrl.includes('/proxy-securetoken')) {
+      targetHost = 'https://securetoken.googleapis.com';
+      pathPrefix = '/proxy-securetoken';
+    } else if (req.originalUrl.includes('/proxy-firestore')) {
+      targetHost = 'https://firestore.googleapis.com';
+      pathPrefix = '/proxy-firestore';
+    }
+
+    const urlParts = req.url.split(pathPrefix);
+    const subPath = urlParts.length > 1 ? urlParts[1] : req.url;
+    const targetUrl = targetHost + subPath;
+
+    const headers: Record<string, string> = {};
+    for (const [key, value] of Object.entries(req.headers)) {
+      const lower = key.toLowerCase();
+      if (lower !== 'host' && lower !== 'content-length' && typeof value === 'string') {
+        headers[key] = value;
+      }
+    }
+
+    const fetchOptions: RequestInit = {
+      method: req.method,
+      headers,
+    };
+
+    if (req.method !== 'GET' && req.method !== 'HEAD' && req.body) {
+      fetchOptions.body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      if (!headers['content-type']) {
+        headers['content-type'] = 'application/json';
+      }
+    }
+
+    const upstreamResponse = await fetch(targetUrl, fetchOptions);
+    res.status(upstreamResponse.status);
+
+    const contentType = upstreamResponse.headers.get('content-type');
+    if (contentType) res.setHeader('content-type', contentType);
+
+    const bodyText = await upstreamResponse.text();
+    res.send(bodyText);
+  } catch (err: any) {
+    console.error('Firebase Proxy Error:', err?.message || err);
+    res.status(502).json({
+      error: 'PROXY_FORWARD_FAILED',
+      message: err?.message || 'Error forwarding to Google services',
+    });
+  }
+});
+
 // Knowledge Base info endpoint
 apiRouter.get('/knowledge-base', (_req: Request, res: Response) => {
   const kb = loadKnowledgeBase();
@@ -291,6 +348,38 @@ apiRouter.post('/admin/sync', async (req: Request, res: Response) => {
     console.error('Sync error:', err);
     res.status(500).json({ error: 'SYNC_FAILED', message: 'همگام‌سازی سایت با خطا مواجه شد.' });
   }
+});
+
+// Public Webhook for WordPress auto-update (triggered on post/page publish)
+apiRouter.all('/webhook/sync', async (req: Request, res: Response) => {
+  const querySecret = req.query.secret as string | undefined;
+  const headerSecret = (req.headers['x-sync-secret'] || req.headers['authorization']) as string | undefined;
+  const expectedSecret = process.env.SYNC_SECRET || 'yazd_sync_secret';
+
+  // Check if secret matches or if requester is admin
+  const isAuthorized = querySecret === expectedSecret || headerSecret === expectedSecret || headerSecret === `Bearer ${expectedSecret}`;
+  if (!isAuthorized) {
+    res.status(401).json({
+      error: 'UNAUTHORIZED',
+      message: 'کلید وب‌هوک نامعتبر است. پارامتر ?secret=yazd_sync_secret را ارسال فرمایید.',
+    });
+    return;
+  }
+
+  // Trigger non-blocking background sync so WordPress request does not time out
+  synchronizeWebsiteKnowledge({ isFullRebuild: false })
+    .then((report) => {
+      console.log(`[Webhook Sync] Auto-sync finished successfully. Total pages: ${report.totalPages}, Changed: ${report.changedPages}`);
+    })
+    .catch((err) => {
+      console.warn('[Webhook Sync] Auto-sync error:', err.message);
+    });
+
+  res.json({
+    success: true,
+    message: 'درخواست همگام‌سازی دریافت شد و ربات در حال به‌روزرسانی اطلاعات از سایت است.',
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // Resume text / PDF parsing endpoint

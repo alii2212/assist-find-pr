@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { apiRouter } from './src/server/apiRouter.ts';
+import { synchronizeWebsiteKnowledge } from './src/server/crawlerService.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,6 +22,7 @@ async function startServer() {
       'Content-Security-Policy',
       "frame-ancestors 'self' https://yazdinnofaraz.ir https://www.yazdinnofaraz.ir https://*.run.app https://*.onrender.com;"
     );
+    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
     res.removeHeader('X-Frame-Options');
     next();
   });
@@ -54,6 +56,15 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server listening on port ${PORT}`);
+
+    // Automatic background sync every 12 hours from yazdinnofaraz.ir
+    const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
+    setInterval(() => {
+      console.log('[Auto-Sync] Running scheduled background sync with yazdinnofaraz.ir...');
+      synchronizeWebsiteKnowledge({ isFullRebuild: false }).catch((err: any) => {
+        console.warn('[Auto-Sync] Background sync encountered an issue:', err?.message || err);
+      });
+    }, TWELVE_HOURS_MS);
   });
 }
 

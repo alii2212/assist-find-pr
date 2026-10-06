@@ -15,6 +15,55 @@
   </head>
   <body class="bg-[#f8f7fc] text-slate-800 font-['Vazirmatn',sans-serif] antialiased selection:bg-purple-600 selection:text-white">
     <div id="root"></div>
+    <script>
+      (function() {
+        // Anti-sanction proxy for Iranian users (routes blocked Google/Firebase endpoints through server)
+        if (typeof window !== 'undefined') {
+          var originalFetch = window.fetch;
+          window.fetch = function(input, init) {
+            try {
+              if (typeof input === 'string') {
+                if (input.indexOf('https://identitytoolkit.googleapis.com') === 0) {
+                  input = input.replace('https://identitytoolkit.googleapis.com', '/api/proxy-identitytoolkit');
+                } else if (input.indexOf('https://securetoken.googleapis.com') === 0) {
+                  input = input.replace('https://securetoken.googleapis.com', '/api/proxy-securetoken');
+                } else if (input.indexOf('https://firestore.googleapis.com') === 0) {
+                  input = input.replace('https://firestore.googleapis.com', '/api/proxy-firestore');
+                }
+              } else if (input && input.href) {
+                var href = input.href;
+                if (href.indexOf('https://identitytoolkit.googleapis.com') === 0) {
+                  input = href.replace('https://identitytoolkit.googleapis.com', window.location.origin + '/api/proxy-identitytoolkit');
+                } else if (href.indexOf('https://securetoken.googleapis.com') === 0) {
+                  input = href.replace('https://securetoken.googleapis.com', window.location.origin + '/api/proxy-securetoken');
+                } else if (href.indexOf('https://firestore.googleapis.com') === 0) {
+                  input = href.replace('https://firestore.googleapis.com', window.location.origin + '/api/proxy-firestore');
+                }
+              }
+            } catch (e) {}
+            return originalFetch.call(this, input, init);
+          };
+
+          if (window.XMLHttpRequest) {
+            var originalOpen = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+              try {
+                if (typeof url === 'string') {
+                  if (url.indexOf('https://identitytoolkit.googleapis.com') === 0) {
+                    url = url.replace('https://identitytoolkit.googleapis.com', '/api/proxy-identitytoolkit');
+                  } else if (url.indexOf('https://securetoken.googleapis.com') === 0) {
+                    url = url.replace('https://securetoken.googleapis.com', '/api/proxy-securetoken');
+                  } else if (url.indexOf('https://firestore.googleapis.com') === 0) {
+                    url = url.replace('https://firestore.googleapis.com', '/api/proxy-firestore');
+                  }
+                }
+              } catch (e) {}
+              return originalOpen.apply(this, arguments);
+            };
+          }
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
