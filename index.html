@@ -31,9 +31,6 @@
             if (u.indexOf('https://securetoken.googleapis.com') === 0) {
               return u.replace('https://securetoken.googleapis.com', window.location.origin + '/api/proxy-securetoken');
             }
-            if (u.indexOf('https://firestore.googleapis.com') === 0) {
-              return u.replace('https://firestore.googleapis.com', window.location.origin + '/api/proxy-firestore');
-            }
             return u;
           }
 

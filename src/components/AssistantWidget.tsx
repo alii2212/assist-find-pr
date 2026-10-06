@@ -110,11 +110,9 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
   }, [isOpen]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if ((e.key === 'Enter' || e.code === 'Enter' || e.keyCode === 13) && !e.shiftKey) {
       e.preventDefault();
-      if (!isStreaming && inputText.trim() && isAuthenticated) {
-        handleSend();
-      }
+      handleSend();
     }
   };
 

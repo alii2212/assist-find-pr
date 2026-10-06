@@ -1,0 +1,42 @@
+[
+  {
+    "id": "domain_energy",
+    "name": "انرژی و بهینه‌سازی",
+    "mainUrl": "https://yazdinnofaraz.ir/enrgy/",
+    "priority": 1,
+    "active": true,
+    "guidanceText": "در این حوزه روی پروژه‌های پایش هوشمند مصرف برق، اینترنت اشیاء صنعتی، مانیتورینگ خطوط انتقال و سیستم‌های مدیریت باتری (BMS) تمرکز کن.",
+    "createdAt": "2026-10-06T11:31:26.840Z",
+    "updatedAt": "2026-10-06T11:31:26.841Z"
+  },
+  {
+    "id": "domain_iot_teams",
+    "name": "تجهیزات هوشمند و تیم‌های نوپا",
+    "mainUrl": "https://yazdinnofaraz.ir/teams/",
+    "priority": 2,
+    "active": true,
+    "guidanceText": "روی تیم‌های فعال در توسعه سخت‌افزار، سیستم‌های نهفته، روبات زیرسطحی ROV و فرصت‌های جذب هم‌تیمی تأکید کن.",
+    "createdAt": "2026-10-06T11:31:26.841Z",
+    "updatedAt": "2026-10-06T11:31:26.841Z"
+  },
+  {
+    "id": "domain_categories",
+    "name": "فراخوان‌های صنعتی و فناوری",
+    "mainUrl": "https://yazdinnofaraz.ir/categories/",
+    "priority": 3,
+    "active": true,
+    "guidanceText": "فراخوان‌های باز در بخش‌های کشاورزی، امنیت غذایی، سلامت، نفت و گاز، و معدن را برای تیم‌ها تشریح کن.",
+    "createdAt": "2026-10-06T11:31:26.841Z",
+    "updatedAt": "2026-10-06T11:31:26.841Z"
+  },
+  {
+    "id": "domain_growth_facilities",
+    "name": "مراحل پذیرش و تسهیلات مرکز رشد",
+    "mainUrl": "https://yazdinnofaraz.ir/facility/",
+    "priority": 4,
+    "active": true,
+    "guidanceText": "خدمات استقرار در دانشگاه یزد، فضای کار اشتراکی، گرنت نمونه‌سازی و فرآیند اخذ گرید دانش‌بنیان را تبیین کن.",
+    "createdAt": "2026-10-06T11:31:26.841Z",
+    "updatedAt": "2026-10-06T11:31:26.841Z"
+  }
+]

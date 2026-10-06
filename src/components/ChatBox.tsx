@@ -61,11 +61,9 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
   }, [inputPrompt]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if ((e.key === 'Enter' || e.code === 'Enter' || e.keyCode === 13) && !e.shiftKey) {
       e.preventDefault();
-      if (!isStreaming && inputPrompt.trim() && isAuthenticated) {
-        handleSend();
-      }
+      handleSend();
     }
   };
 
