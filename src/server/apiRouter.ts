@@ -44,12 +44,15 @@ apiRouter.use((req: Request, res: Response, next) => {
 // --------------------------------------------------------------------
 // Anti-Sanction Proxies for Firebase (Bypasses Iran IP blocks from Google)
 // --------------------------------------------------------------------
-apiRouter.all(['/proxy-identitytoolkit*', '/proxy-securetoken*', '/proxy-firestore*'], async (req: Request, res: Response) => {
+apiRouter.all(['/proxy-identitytoolkit*', '/proxy-googleapis-identitytoolkit*', '/proxy-securetoken*', '/proxy-firestore*'], async (req: Request, res: Response) => {
   try {
     let targetHost = 'https://identitytoolkit.googleapis.com';
     let pathPrefix = '/proxy-identitytoolkit';
 
-    if (req.originalUrl.includes('/proxy-securetoken')) {
+    if (req.originalUrl.includes('/proxy-googleapis-identitytoolkit')) {
+      targetHost = 'https://www.googleapis.com/identitytoolkit';
+      pathPrefix = '/proxy-googleapis-identitytoolkit';
+    } else if (req.originalUrl.includes('/proxy-securetoken')) {
       targetHost = 'https://securetoken.googleapis.com';
       pathPrefix = '/proxy-securetoken';
     } else if (req.originalUrl.includes('/proxy-firestore')) {

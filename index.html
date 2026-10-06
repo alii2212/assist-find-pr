@@ -19,26 +19,35 @@
       (function() {
         // Anti-sanction proxy for Iranian users (routes blocked Google/Firebase endpoints through server)
         if (typeof window !== 'undefined') {
+          function rewriteTargetUrl(u) {
+            if (!u || typeof u !== 'string') return u;
+            if (u.indexOf('https://www.googleapis.com/identitytoolkit') === 0) {
+              return u.replace('https://www.googleapis.com/identitytoolkit', window.location.origin + '/api/proxy-googleapis-identitytoolkit');
+            }
+            if (u.indexOf('https://identitytoolkit.googleapis.com') === 0) {
+              return u.replace('https://identitytoolkit.googleapis.com', window.location.origin + '/api/proxy-identitytoolkit');
+            }
+            if (u.indexOf('https://securetoken.googleapis.com') === 0) {
+              return u.replace('https://securetoken.googleapis.com', window.location.origin + '/api/proxy-securetoken');
+            }
+            if (u.indexOf('https://firestore.googleapis.com') === 0) {
+              return u.replace('https://firestore.googleapis.com', window.location.origin + '/api/proxy-firestore');
+            }
+            return u;
+          }
+
           var originalFetch = window.fetch;
           window.fetch = function(input, init) {
             try {
               if (typeof input === 'string') {
-                if (input.indexOf('https://identitytoolkit.googleapis.com') === 0) {
-                  input = input.replace('https://identitytoolkit.googleapis.com', '/api/proxy-identitytoolkit');
-                } else if (input.indexOf('https://securetoken.googleapis.com') === 0) {
-                  input = input.replace('https://securetoken.googleapis.com', '/api/proxy-securetoken');
-                } else if (input.indexOf('https://firestore.googleapis.com') === 0) {
-                  input = input.replace('https://firestore.googleapis.com', '/api/proxy-firestore');
+                input = rewriteTargetUrl(input);
+              } else if (input && typeof input.url === 'string') {
+                var rewritten = rewriteTargetUrl(input.url);
+                if (rewritten !== input.url) {
+                  input = new Request(rewritten, input);
                 }
               } else if (input && input.href) {
-                var href = input.href;
-                if (href.indexOf('https://identitytoolkit.googleapis.com') === 0) {
-                  input = href.replace('https://identitytoolkit.googleapis.com', window.location.origin + '/api/proxy-identitytoolkit');
-                } else if (href.indexOf('https://securetoken.googleapis.com') === 0) {
-                  input = href.replace('https://securetoken.googleapis.com', window.location.origin + '/api/proxy-securetoken');
-                } else if (href.indexOf('https://firestore.googleapis.com') === 0) {
-                  input = href.replace('https://firestore.googleapis.com', window.location.origin + '/api/proxy-firestore');
-                }
+                input = rewriteTargetUrl(input.href);
               }
             } catch (e) {}
             return originalFetch.call(this, input, init);
@@ -49,13 +58,7 @@
             XMLHttpRequest.prototype.open = function(method, url) {
               try {
                 if (typeof url === 'string') {
-                  if (url.indexOf('https://identitytoolkit.googleapis.com') === 0) {
-                    url = url.replace('https://identitytoolkit.googleapis.com', '/api/proxy-identitytoolkit');
-                  } else if (url.indexOf('https://securetoken.googleapis.com') === 0) {
-                    url = url.replace('https://securetoken.googleapis.com', '/api/proxy-securetoken');
-                  } else if (url.indexOf('https://firestore.googleapis.com') === 0) {
-                    url = url.replace('https://firestore.googleapis.com', '/api/proxy-firestore');
-                  }
+                  url = rewriteTargetUrl(url);
                 }
               } catch (e) {}
               return originalOpen.apply(this, arguments);
