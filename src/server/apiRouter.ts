@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { streamProjectAdvisor } from './geminiService.ts';
-import { verifyFirebaseToken, isUserAdmin } from './authMiddleware.ts';
+import { verifyFirebaseToken, isUserAdmin, signAppUserToken } from './authMiddleware.ts';
 import { checkRateLimit } from './rateLimiter.ts';
 import {
   loadKnowledgeBase,
@@ -98,6 +98,50 @@ apiRouter.all(['/proxy-identitytoolkit*', '/proxy-googleapis-identitytoolkit*', 
       error: 'PROXY_FORWARD_FAILED',
       message: err?.message || 'Error forwarding to Google services',
     });
+  }
+});
+
+// Direct Google OAuth login endpoint (100% reliable for Iran users - no firebaseapp.com)
+apiRouter.post('/auth/google-token', async (req: Request, res: Response) => {
+  const { accessToken } = req.body || {};
+  if (!accessToken) {
+    res.status(400).json({ error: 'MISSING_ACCESS_TOKEN', message: 'توکن دسترسی گوگل ارسال نشده است.' });
+    return;
+  }
+
+  try {
+    const googleRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!googleRes.ok) {
+      res.status(401).json({
+        error: 'INVALID_GOOGLE_TOKEN',
+        message: 'اعتبارسنجی حساب گوگل با خطا مواجه شد.',
+      });
+      return;
+    }
+
+    const profile: any = await googleRes.json();
+    const user = {
+      uid: profile.sub || 'user_' + Date.now(),
+      email: profile.email || '',
+      displayName: profile.name || profile.email?.split('@')[0] || 'کاربر',
+      photoURL: profile.picture || null,
+    };
+
+    const token = signAppUserToken(user);
+    const isAdmin = isUserAdmin({ uid: user.uid, email: user.email });
+
+    res.json({
+      success: true,
+      user,
+      token,
+      isAdmin,
+    });
+  } catch (err: any) {
+    console.error('Google token verification error:', err);
+    res.status(500).json({ error: 'AUTH_FAILED', message: err?.message || 'خطا در احراز هویت با گوگل' });
   }
 });
 

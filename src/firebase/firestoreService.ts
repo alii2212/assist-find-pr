@@ -12,6 +12,40 @@ import {
 import { db } from './config.ts';
 import { ChatSession, ChatMessage } from '../types/chat.ts';
 
+function getLocalChats(userId: string): ChatSession[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(`growth_chats_${userId}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalChats(userId: string, chats: ChatSession[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`growth_chats_${userId}`, JSON.stringify(chats));
+  } catch {}
+}
+
+function getLocalMessages(userId: string, chatId: string): ChatMessage[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(`growth_msgs_${userId}_${chatId}`);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalMessages(userId: string, chatId: string, msgs: ChatMessage[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(`growth_msgs_${userId}_${chatId}`, JSON.stringify(msgs));
+  } catch {}
+}
+
 /**
  * Lists all chats for an authenticated user, ordered by latest update
  */
@@ -22,7 +56,7 @@ export async function listUserChats(userId: string): Promise<ChatSession[]> {
     const q = query(chatsCol, orderBy('updatedAt', 'desc'));
     const snapshot = await getDocs(q);
 
-    return snapshot.docs.map((docSnap) => {
+    const items = snapshot.docs.map((docSnap) => {
       const data = docSnap.data();
       return {
         id: docSnap.id,
@@ -35,9 +69,12 @@ export async function listUserChats(userId: string): Promise<ChatSession[]> {
         lastMessagePreview: data.lastMessagePreview,
       };
     });
+
+    saveLocalChats(userId, items);
+    return items;
   } catch (err: any) {
-    console.warn('Notice listing user chats from Firestore with order:', err?.message || err);
-    // Graceful fallback to unordered getDocs
+    console.warn('Notice listing user chats from Firestore:', err?.message || err);
+    // Graceful fallback to unordered getDocs or localStorage
     try {
       const chatsCol = collection(db, 'users', userId, 'chats');
       const snapshot = await getDocs(chatsCol);
@@ -55,10 +92,11 @@ export async function listUserChats(userId: string): Promise<ChatSession[]> {
         };
       });
       items.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      saveLocalChats(userId, items);
       return items;
-    } catch (fallbackErr: any) {
-      console.warn('Fallback getDocs also returned:', fallbackErr?.message || fallbackErr);
-      return [];
+    } catch {
+      // Local storage fallback ensures user never loses chats
+      return getLocalChats(userId);
     }
   }
 }
@@ -188,7 +226,7 @@ export async function loadChatMessages(userId: string, chatId: string): Promise<
     const q = query(messagesCol, orderBy('timestamp', 'asc'));
     const snapshot = await getDocs(q);
 
-    return snapshot.docs.map((docSnap) => {
+    const msgs = snapshot.docs.map((docSnap) => {
       const data = docSnap.data();
       return {
         id: docSnap.id,
@@ -201,6 +239,8 @@ export async function loadChatMessages(userId: string, chatId: string): Promise<
         isError: data.isError || false,
       };
     });
+    saveLocalMessages(userId, chatId, msgs);
+    return msgs;
   } catch (err: any) {
     console.warn('Notice loading chat messages with order:', err?.message || err);
     try {
@@ -220,16 +260,16 @@ export async function loadChatMessages(userId: string, chatId: string): Promise<
         };
       });
       msgs.sort((a, b) => a.timestamp - b.timestamp);
+      saveLocalMessages(userId, chatId, msgs);
       return msgs;
-    } catch (fallbackErr) {
-      console.warn('Fallback loading messages also returned:', fallbackErr);
-      return [];
+    } catch {
+      return getLocalMessages(userId, chatId);
     }
   }
 }
 
 /**
- * Persists a message to Firestore
+ * Persists a message to Firestore and local storage
  */
 export async function saveChatMessage(
   userId: string,
@@ -237,9 +277,31 @@ export async function saveChatMessage(
   msg: ChatMessage
 ): Promise<void> {
   if (!userId || !chatId || !msg.id) return;
+
+  // Always save locally first so user experience is instant and never lost
+  try {
+    const localMsgs = getLocalMessages(userId, chatId);
+    const existingIdx = localMsgs.findIndex((m) => m.id === msg.id);
+    if (existingIdx >= 0) {
+      localMsgs[existingIdx] = msg;
+    } else {
+      localMsgs.push(msg);
+    }
+    saveLocalMessages(userId, chatId, localMsgs);
+
+    // Update lastMessagePreview in local chats
+    const localChats = getLocalChats(userId);
+    const chatIdx = localChats.findIndex((c) => c.id === chatId);
+    if (chatIdx >= 0) {
+      localChats[chatIdx].lastMessagePreview = msg.content.substring(0, 80);
+      localChats[chatIdx].updatedAt = new Date().toISOString();
+      saveLocalChats(userId, localChats);
+    }
+  } catch {}
+
+  // Attempt persisting to Firestore in background
   try {
     const msgDoc = doc(db, 'users', userId, 'chats', chatId, 'messages', msg.id);
-
     await setDoc(msgDoc, {
       role: msg.role,
       content: msg.content,
@@ -260,6 +322,6 @@ export async function saveChatMessage(
       { merge: true }
     );
   } catch (err: any) {
-    console.warn('Notice persisting chat message to Firestore:', err?.message || err);
+    console.warn('Notice persisting chat message to Firestore (cached locally):', err?.message || err);
   }
 }

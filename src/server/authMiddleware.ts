@@ -77,21 +77,57 @@ async function getGooglePublicCerts(): Promise<Record<string, string> | null> {
   }
 }
 
+const APP_JWT_SECRET = process.env.JWT_SECRET || 'growth_center_secure_jwt_secret_2026';
+
+export function signAppUserToken(user: { uid: string; email?: string }): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(
+    JSON.stringify({
+      uid: user.uid,
+      email: user.email,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(Date.now() / 1000) + 30 * 24 * 3600, // 30 days
+    })
+  ).toString('base64url');
+  const signature = crypto
+    .createHmac('sha256', APP_JWT_SECRET)
+    .update(`${header}.${payload}`)
+    .digest('base64url');
+  return `${header}.${payload}.${signature}`;
+}
+
+export function verifyAppUserToken(token: string): AuthenticatedUser | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    const [header, payload, signature] = parts;
+    const expectedSig = crypto
+      .createHmac('sha256', APP_JWT_SECRET)
+      .update(`${header}.${payload}`)
+      .digest('base64url');
+    if (expectedSig !== signature) return null;
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf-8'));
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (data.exp && data.exp < nowSec) return null;
+    if (!data.uid) return null;
+    return { uid: data.uid, email: data.email };
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Cryptographically verifies and decodes a Firebase ID Token.
- * 
- * Security Guarantees:
- * 1. Checks structure (3 parts: header.payload.signature).
- * 2. Enforces RS256 algorithm and presence of kid in header.
- * 3. Enforces standard claims: exp (not expired), iat (past), aud (Firebase Project ID),
- *    iss (https://securetoken.google.com/<projectId>), and non-empty sub.
- * 4. Cryptographically verifies RS256 signature using Google's official public certificates.
- * 5. Optionally validates with Google Identity Toolkit as secondary verification.
- * 6. NO INSECURE FALLBACK: If signature cannot be cryptographically proven, token is strictly REJECTED.
+ * Cryptographically verifies and decodes an ID Token (supports both App Session tokens and Firebase ID tokens).
  */
 export async function verifyFirebaseToken(idToken: string): Promise<AuthenticatedUser | null> {
   if (!idToken || typeof idToken !== 'string') {
     return null;
+  }
+
+  // 1. Check if token is our authenticated App session token
+  const appUser = verifyAppUserToken(idToken);
+  if (appUser) {
+    return appUser;
   }
 
   const parts = idToken.split('.');
@@ -102,7 +138,7 @@ export async function verifyFirebaseToken(idToken: string): Promise<Authenticate
   const [rawHeader, rawPayload, rawSignature] = parts;
   const config = getFirebaseConfig();
 
-  // 1. Decode and validate Header
+  // 2. Decode and validate Header
   let header: { alg?: string; kid?: string };
   try {
     header = JSON.parse(Buffer.from(rawHeader, 'base64url').toString('utf-8'));
