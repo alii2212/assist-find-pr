@@ -75,9 +75,9 @@ export async function ensureSession(): Promise<any> {
         body: JSON.stringify({ guestId }),
       });
       const data = await res.json();
-      if (data.success && data.token) {
-        guestId = data.user.uid;
-        guestToken = data.token;
+      if (data.success && data.token && data.user?.uid) {
+        guestId = String(data.user.uid);
+        guestToken = String(data.token);
         localStorage.setItem('growth_guest_id', guestId);
         localStorage.setItem('growth_guest_token', guestToken);
       }

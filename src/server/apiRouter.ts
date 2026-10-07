@@ -436,10 +436,10 @@ apiRouter.all('/webhook/sync', async (req: Request, res: Response) => {
   // Trigger non-blocking background sync so WordPress request does not time out
   synchronizeWebsiteKnowledge({ isFullRebuild: false })
     .then((report) => {
-      console.log(`[Webhook Sync] Auto-sync finished successfully. Total pages: ${report.totalPages}, Changed: ${report.changedPages}`);
+      console.log(`[Webhook Sync] Auto-sync finished successfully. Total pages: ${report.totalDiscoveredPages}, Changed: ${report.changedPagesCount}`);
     })
-    .catch((err) => {
-      console.warn('[Webhook Sync] Auto-sync error:', err.message);
+    .catch((err: any) => {
+      console.warn('[Webhook Sync] Auto-sync error:', err?.message || err);
     });
 
   res.json({

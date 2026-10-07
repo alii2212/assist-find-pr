@@ -373,7 +373,7 @@ export default function App() {
           setMessages((prev) =>
             prev.map((m) => (m.id === asstMsgId ? errorMsgObj : m))
           );
-          await saveChatMessage(userId, activeChatId, errorMsgObj);
+          await saveChatMessage(currentUid, currentChatId, errorMsgObj);
           setIsStreaming(false);
           return;
         }
@@ -491,7 +491,7 @@ export default function App() {
         setMessages((prev) =>
           prev.map((m) => (m.id === asstMsgId ? errFinal : m))
         );
-        await saveChatMessage(userId, activeChatId, errFinal);
+        await saveChatMessage(currentUid, currentChatId, errFinal);
       } finally {
         setIsStreaming(false);
       }
