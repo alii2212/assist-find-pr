@@ -118,7 +118,7 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
 
   const handleSend = async () => {
     const text = inputText.trim();
-    if (!text || isStreaming || !isAuthenticated) return;
+    if (!text || isStreaming) return;
     setInputText('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -454,76 +454,64 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
 
           {/* Input & Footer Controls */}
           <div className="p-3 bg-white border-t border-purple-100 shrink-0">
-            {!isAuthenticated && !isLoadingAuth ? (
-              /* Auth Required Notice */
-              <div className="rounded-xl bg-purple-50/70 p-3 border border-purple-200 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-                <div className="flex items-center gap-2 text-right">
-                  <Lock className="w-4 h-4 text-purple-700 shrink-0" />
-                  <span className="text-xs text-slate-700 font-medium">
-                    برای مشاوره و انتخاب پروژه، با Google وارد شوید.
-                  </span>
-                </div>
+            {!isAuthenticated ? (
+              <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 mb-2 bg-purple-50/70 border border-purple-100 rounded-lg text-[11px] text-slate-600">
+                <span className="truncate">گفتگو به عنوان کاربر آزاد. برای ذخیره ابری:</span>
                 <button
                   type="button"
                   onClick={onLogin}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-xs font-bold text-slate-800 bg-white hover:bg-slate-50 active:scale-95 px-3 py-1.5 rounded-lg border border-slate-200 shadow-xs transition-all cursor-pointer font-sans shrink-0"
+                  className="font-medium text-purple-700 hover:text-purple-900 hover:underline shrink-0 cursor-pointer"
                 >
-                  <svg className="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.15z" />
-                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.36 7.33 24 12 24z" />
-                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.98 0 12s.46 3.84 1.26 5.42l4.02-3.15z" />
-                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.25 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
-                  </svg>
-                  <span>ورود با Google</span>
+                  ورود با Google
                 </button>
               </div>
-            ) : (
-              /* Chat Input Box */
-              <div className="space-y-2">
-                <div className="relative flex items-end gap-2 bg-slate-50/80 border border-purple-200 focus-within:border-purple-600 focus-within:bg-white focus-within:ring-2 focus-within:ring-purple-100 rounded-xl p-2 transition-all">
-                  {/* Resume Upload Action Button */}
-                  <button
-                    type="button"
-                    onClick={() => setIsResumeModalOpen(true)}
-                    className="p-1.5 rounded-lg text-slate-500 hover:text-purple-700 hover:bg-purple-50 transition-colors shrink-0 cursor-pointer"
-                    title="بارگذاری رزومه PDF یا متن سوابق"
-                  >
-                    <FileUp className="w-4 h-4" />
-                  </button>
+            ) : null}
 
-                  <textarea
-                    ref={textareaRef}
-                    value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={isStreaming || !isAuthenticated}
-                    placeholder="رشته، مهارت‌ها یا سوال خود درباره پروژه‌ها را بنویسید..."
-                    rows={1}
-                    maxLength={2000}
-                    className="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none resize-none px-1 py-1 max-h-[120px] leading-relaxed disabled:opacity-50"
-                  />
+            {/* Chat Input Box */}
+            <div className="space-y-2">
+              <div className="relative flex items-end gap-2 bg-slate-50/80 border border-purple-200 focus-within:border-purple-600 focus-within:bg-white focus-within:ring-2 focus-within:ring-purple-100 rounded-xl p-2 transition-all">
+                {/* Resume Upload Action Button */}
+                <button
+                  type="button"
+                  onClick={() => setIsResumeModalOpen(true)}
+                  className="p-1.5 rounded-lg text-slate-500 hover:text-purple-700 hover:bg-purple-50 transition-colors shrink-0 cursor-pointer"
+                  title="بارگذاری رزومه PDF یا متن سوابق"
+                >
+                  <FileUp className="w-4 h-4" />
+                </button>
 
-                  <button
-                    type="button"
-                    onClick={handleSend}
-                    disabled={!inputText.trim() || isStreaming || !isAuthenticated}
-                    className="p-2 rounded-lg bg-purple-700 hover:bg-purple-800 active:scale-95 text-white disabled:opacity-30 disabled:hover:bg-purple-700 disabled:cursor-not-allowed transition-all shadow-sm shadow-purple-700/20 shrink-0 cursor-pointer"
-                    title="ارسال پیام"
-                  >
-                    {isStreaming ? (
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Send className="w-3.5 h-3.5 rotate-180" />
-                    )}
-                  </button>
-                </div>
+                <textarea
+                  ref={textareaRef}
+                  value={inputText}
+                  onChange={(e) => setInputText(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  disabled={isStreaming}
+                  placeholder="رشته، مهارت‌ها یا سوال خود درباره پروژه‌ها را بنویسید..."
+                  rows={1}
+                  maxLength={2000}
+                  className="w-full bg-transparent text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none resize-none px-1 py-1 max-h-[120px] leading-relaxed disabled:opacity-50"
+                />
+
+                <button
+                  type="button"
+                  onClick={handleSend}
+                  disabled={!inputText.trim() || isStreaming}
+                  className="p-2 rounded-lg bg-purple-700 hover:bg-purple-800 active:scale-95 text-white disabled:opacity-30 disabled:hover:bg-purple-700 disabled:cursor-not-allowed transition-all shadow-sm shadow-purple-700/20 shrink-0 cursor-pointer"
+                  title="ارسال پیام"
+                >
+                  {isStreaming ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Send className="w-3.5 h-3.5 rotate-180" />
+                  )}
+                </button>
+              </div>
 
                 <div className="flex items-center justify-between text-[10px] text-slate-400 px-1">
                   <span>Enter برای ارسال • بارگذاری رزومه با دکمه پیوست</span>
                   <span>{inputText.length}/۲۰۰۰</span>
                 </div>
               </div>
-            )}
           </div>
 
           {/* Multiple Chats Drawer */}

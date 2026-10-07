@@ -42,18 +42,70 @@ const GOOGLE_OAUTH_CLIENT_ID = '506588241024-php69dmgr659mm5a91lpusfv3rdc2t91.ap
 let localAppUser: any = null;
 const authListeners: Set<(user: any) => void> = new Set();
 
-// Try restoring user session from localStorage immediately on load
-if (typeof window !== 'undefined') {
-  try {
-    const raw = localStorage.getItem('growth_app_user_session');
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      localAppUser = {
-        ...parsed,
-        getIdToken: async () => parsed.token,
-      };
+// Initialize session (restores Google user or creates instant guest session)
+export async function ensureSession(): Promise<any> {
+  if (typeof window === 'undefined') return null;
+
+  // 1. Check existing saved Google user session
+  const savedGoogle = localStorage.getItem('growth_app_user_session');
+  if (savedGoogle) {
+    try {
+      const parsed = JSON.parse(savedGoogle);
+      if (parsed && parsed.token) {
+        localAppUser = {
+          ...parsed,
+          isGuest: false,
+          getIdToken: async () => parsed.token,
+        };
+        notifyAuthChange(localAppUser);
+        return localAppUser;
+      }
+    } catch {}
+  }
+
+  // 2. Otherwise obtain server-signed guest session
+  let guestId = localStorage.getItem('growth_guest_id');
+  let guestToken = localStorage.getItem('growth_guest_token');
+
+  if (!guestId || !guestToken) {
+    try {
+      const res = await fetch('/api/auth/guest-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ guestId }),
+      });
+      const data = await res.json();
+      if (data.success && data.token) {
+        guestId = data.user.uid;
+        guestToken = data.token;
+        localStorage.setItem('growth_guest_id', guestId);
+        localStorage.setItem('growth_guest_token', guestToken);
+      }
+    } catch (e) {
+      console.warn('Guest token init warning:', e);
     }
-  } catch (e) {}
+  }
+
+  if (guestId && guestToken) {
+    localAppUser = {
+      uid: guestId,
+      email: null,
+      displayName: 'کاربر مهمان',
+      photoURL: null,
+      isGuest: true,
+      token: guestToken,
+      getIdToken: async () => guestToken!,
+    };
+    notifyAuthChange(localAppUser);
+    return localAppUser;
+  }
+
+  return null;
+}
+
+// Kick off session immediately
+if (typeof window !== 'undefined') {
+  ensureSession().catch(() => {});
 }
 
 function notifyAuthChange(user: any) {
@@ -151,8 +203,9 @@ export async function logoutUser(): Promise<void> {
   if (typeof window !== 'undefined') {
     localStorage.removeItem('growth_app_user_session');
   }
-  notifyAuthChange(null);
   await signOut(auth).catch(() => {});
+  // Automatically restore guest session so visitor can still chat
+  await ensureSession();
 }
 
 /**
@@ -161,6 +214,10 @@ export async function logoutUser(): Promise<void> {
 export async function getCurrentIdToken(forceRefresh: boolean = false): Promise<string | null> {
   if (localAppUser?.getIdToken) {
     return localAppUser.getIdToken(forceRefresh);
+  }
+  const session = await ensureSession();
+  if (session?.getIdToken) {
+    return session.getIdToken(forceRefresh);
   }
   if (auth.currentUser) {
     return auth.currentUser.getIdToken(forceRefresh);

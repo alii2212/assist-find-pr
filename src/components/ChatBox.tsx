@@ -69,7 +69,7 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
 
   const handleSend = async () => {
     const text = inputPrompt.trim();
-    if (!text || isStreaming || !isAuthenticated) return;
+    if (!text || isStreaming) return;
     setInputPrompt('');
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -246,86 +246,53 @@ export const ChatBox: React.FC<ChatBoxProps> = ({
 
       {/* Input / Auth Bar Area */}
       <div className="p-3 sm:p-4 bg-slate-950/70 border-t border-slate-800 relative">
-        {!isAuthenticated && !isLoadingAuth ? (
-          /* Not Authenticated Overlay */
-          <div className="rounded-xl bg-slate-900/90 border border-slate-800 p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-right">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
-                <Lock className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-medium text-slate-200">
-                  برای پرسیدن سؤال ابتدا با Google وارد شوید.
-                </p>
-                <p className="text-[11px] text-slate-400">
-                  اطلاعات حساب شما ذخیره نخواهد شد و صرفاً برای راستی‌آزمایی نشست کاربر است.
-                </p>
-              </div>
-            </div>
-
+        {!isAuthenticated ? (
+          <div className="rounded-lg bg-slate-900 border border-slate-800 p-2.5 mb-2 flex items-center justify-between gap-2 text-xs text-slate-300">
+            <span>گفتگو به عنوان کاربر مهمان</span>
             <button
               onClick={onLogin}
               type="button"
-              className="inline-flex items-center justify-center gap-2 text-xs font-semibold text-slate-950 bg-white hover:bg-slate-100 active:scale-95 px-4 py-2 rounded-xl shadow-md transition-all cursor-pointer font-sans shrink-0 w-full sm:w-auto"
+              className="text-emerald-400 hover:text-emerald-300 font-medium hover:underline cursor-pointer"
             >
-              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.66v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.15z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.25 21.36 7.33 24 12 24z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.98 0 12s.46 3.84 1.26 5.42l4.02-3.15z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.25 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
-                />
-              </svg>
-              <span>ورود با Google</span>
+              ورود با Google (ذخیره سوابق)
             </button>
           </div>
-        ) : (
-          /* Input Box */
-          <div className="flex flex-col gap-2">
-            <div className="relative flex items-end gap-2 bg-slate-900 border border-slate-800 focus-within:border-emerald-500/60 rounded-xl p-2 transition-all shadow-inner">
-              <textarea
-                ref={textareaRef}
-                value={inputPrompt}
-                onChange={(e) => setInputPrompt(e.target.value)}
-                onKeyDown={handleKeyDown}
-                disabled={isStreaming || !isAuthenticated}
-                placeholder="مثلاً: سوابق تحصیلی من چیست؟"
-                rows={1}
-                maxLength={500}
-                className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none px-2 py-1 max-h-[140px] leading-relaxed disabled:opacity-50"
-              />
+        ) : null}
 
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={!inputPrompt.trim() || isStreaming || !isAuthenticated}
-                className="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white disabled:opacity-30 disabled:hover:bg-emerald-600 disabled:cursor-not-allowed transition-all shadow-md shrink-0 cursor-pointer"
-                title="ارسال سؤال (Enter)"
-              >
-                {isStreaming ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4 rotate-180" />
-                )}
-              </button>
-            </div>
+        {/* Input Box */}
+        <div className="flex flex-col gap-2">
+          <div className="relative flex items-end gap-2 bg-slate-900 border border-slate-800 focus-within:border-emerald-500/60 rounded-xl p-2 transition-all shadow-inner">
+            <textarea
+              ref={textareaRef}
+              value={inputPrompt}
+              onChange={(e) => setInputPrompt(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isStreaming}
+              placeholder="مثلاً: سوابق تحصیلی من چیست؟"
+              rows={1}
+              maxLength={500}
+              className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none resize-none px-2 py-1 max-h-[140px] leading-relaxed disabled:opacity-50"
+            />
 
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!inputPrompt.trim() || isStreaming}
+              className="p-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white disabled:opacity-30 disabled:hover:bg-emerald-600 disabled:cursor-not-allowed transition-all shadow-md shrink-0 cursor-pointer"
+              title="ارسال سؤال (Enter)"
+            >
+              {isStreaming ? (
+                <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Send className="w-4 h-4 rotate-180" />
+              )}
+            </button>
             <div className="flex items-center justify-between px-1 text-[11px] text-slate-500">
               <span>کلید Enter برای ارسال • Shift + Enter برای خط جدید</span>
               <span>{inputPrompt.length}/500</span>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

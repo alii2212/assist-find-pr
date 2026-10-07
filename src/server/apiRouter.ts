@@ -145,6 +145,26 @@ apiRouter.post('/auth/google-token', async (req: Request, res: Response) => {
   }
 });
 
+// Instant Guest session token for visitors without Google Login
+apiRouter.post('/auth/guest-token', (req: Request, res: Response) => {
+  let guestId = req.body?.guestId;
+  if (!guestId || typeof guestId !== 'string' || !guestId.startsWith('guest_')) {
+    guestId = 'guest_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+  }
+  const token = signAppUserToken({ uid: guestId });
+  res.json({
+    success: true,
+    user: {
+      uid: guestId,
+      email: null,
+      displayName: 'کاربر مهمان',
+      photoURL: null,
+      isGuest: true,
+    },
+    token,
+  });
+});
+
 // Knowledge Base info endpoint
 apiRouter.get('/knowledge-base', (_req: Request, res: Response) => {
   const kb = loadKnowledgeBase();

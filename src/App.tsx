@@ -10,6 +10,7 @@ import {
   loginWithGoogle,
   logoutUser,
   getCurrentIdToken,
+  ensureSession,
 } from './firebase/config.ts';
 import {
   listUserChats,
@@ -260,12 +261,41 @@ export default function App() {
   // Send message and stream Gemini response
   const handleSendMessage = useCallback(
     async (text: string) => {
-      if (!text.trim() || isStreaming || !userId || !activeChatId) return;
+      if (!text.trim() || isStreaming) return;
 
       setCurrentError(null);
+
+      let currentUid = userId;
+      let currentChatId = activeChatId;
+
+      if (!currentUid) {
+        const session = await ensureSession();
+        if (session) {
+          currentUid = session.uid;
+          setUserId(session.uid);
+          setUserEmail(session.email || null);
+          setIsAuthenticated(!session.isGuest);
+        }
+      }
+
+      if (!currentUid) {
+        currentUid = 'guest_' + Date.now();
+        setUserId(currentUid);
+      }
+
+      if (!currentChatId) {
+        const newChat = await createChat(currentUid, {
+          title: 'پروژه‌های مناسب برای من',
+          conversationPageUrl: currentPageUrl,
+        });
+        setChats([newChat]);
+        setActiveChatId(newChat.id);
+        currentChatId = newChat.id;
+      }
+
       const token = await getCurrentIdToken();
       if (!token) {
-        setCurrentError('نشست کاربری شما معتبر نیست. لطفاً مجدداً وارد شوید.');
+        setCurrentError('در حال برقراری اتصال... لطفاً دوباره امتحان فرمایید.');
         return;
       }
 
@@ -291,13 +321,13 @@ export default function App() {
       setMessages((prev) => [...prev, userMsg, assistantMsg]);
       setIsStreaming(true);
 
-      // Save user message to Firestore
-      await saveChatMessage(userId, activeChatId, userMsg);
+      // Save user message to Firestore / Local
+      await saveChatMessage(currentUid, currentChatId, userMsg);
 
       // Auto-generate title if this is the first message
       if (messages.length === 0 && activeChat?.title.startsWith('گفتگوی جدید')) {
         const shortTitle = text.trim().substring(0, 30);
-        handleRenameChat(activeChatId, shortTitle);
+        handleRenameChat(currentChatId, shortTitle);
       }
 
       try {
@@ -313,7 +343,7 @@ export default function App() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            chatId: activeChatId,
+            chatId: currentChatId,
             question: text.trim(),
             currentPageUrl: activeChat?.conversationPageUrl || currentPageUrl,
             chatHistory: historyPayload,
@@ -434,17 +464,17 @@ export default function App() {
           prev.map((m) => (m.id === asstMsgId ? finalAsstMsg : m))
         );
 
-        // Save completed assistant message to Firestore
-        await saveChatMessage(userId, activeChatId, finalAsstMsg);
+        // Save completed assistant message to Firestore / Local
+        await saveChatMessage(currentUid, currentChatId, finalAsstMsg);
 
         // Update candidateProfile in Firestore if updated
         if (receivedProfile) {
-          await updateChatMetadata(userId, activeChatId, {
+          await updateChatMetadata(currentUid, currentChatId, {
             candidateProfile: receivedProfile,
           });
           setChats((prev) =>
             prev.map((c) =>
-              c.id === activeChatId ? { ...c, candidateProfile: receivedProfile! } : c
+              c.id === currentChatId ? { ...c, candidateProfile: receivedProfile! } : c
             )
           );
         }
