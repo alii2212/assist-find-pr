@@ -9,8 +9,31 @@ import {
   serverTimestamp,
   writeBatch,
 } from 'firebase/firestore';
-import { db } from './config.ts';
+import { db, auth } from './config.ts';
 import { ChatSession, ChatMessage } from '../types/chat.ts';
+
+// Circuit breaker: If remote Firestore fails due to Spark plan limitations or 403,
+// disable remote network calls for the rest of the session so console is never spammed.
+let isFirestoreDisabled = false;
+
+export function disableFirestoreSync() {
+  isFirestoreDisabled = true;
+}
+
+/**
+ * Checks if the user is a genuine Firebase Auth user who is allowed by security rules
+ * (i.e. not a guest, and auth.currentUser.uid matches userId).
+ * This completely prevents 403 Permission Denied and CORS WebChannel errors.
+ */
+function canSyncWithFirestore(userId?: string): boolean {
+  if (isFirestoreDisabled) return false;
+  if (!userId) return false;
+  if (userId.startsWith('guest_')) return false;
+  if (!auth.currentUser || auth.currentUser.uid !== userId) {
+    return false;
+  }
+  return true;
+}
 
 function getLocalChats(userId: string): ChatSession[] {
   if (typeof window === 'undefined') return [];
@@ -48,7 +71,7 @@ function saveLocalMessages(userId: string, chatId: string, msgs: ChatMessage[]) 
 
 async function fetchFirestoreChats(userId: string): Promise<ChatSession[]> {
   const timeoutPromise = new Promise<ChatSession[]>((resolve) =>
-    setTimeout(() => resolve(getLocalChats(userId)), 3000)
+    setTimeout(() => resolve(getLocalChats(userId)), 2500)
   );
 
   const fetchPromise = (async () => {
@@ -75,7 +98,10 @@ async function fetchFirestoreChats(userId: string): Promise<ChatSession[]> {
         saveLocalChats(userId, items);
       }
       return items.length > 0 ? items : getLocalChats(userId);
-    } catch {
+    } catch (err: any) {
+      if (/permission-denied|403|not-found|unavailable/i.test(String(err?.message || err))) {
+        disableFirestoreSync();
+      }
       return getLocalChats(userId);
     }
   })();
@@ -84,36 +110,39 @@ async function fetchFirestoreChats(userId: string): Promise<ChatSession[]> {
 }
 
 /**
- * Lists all chats for an authenticated user, ordered by latest update
+ * Lists all chats for a user, ordered by latest update
  */
 export async function listUserChats(userId: string): Promise<ChatSession[]> {
   if (!userId) return [];
   const local = getLocalChats(userId);
   if (local.length > 0) {
-    // Return instantly from local cache, sync in background
-    fetchFirestoreChats(userId).catch(() => {});
+    if (canSyncWithFirestore(userId)) {
+      fetchFirestoreChats(userId).catch(() => {});
+    }
     return local;
+  }
+  if (!canSyncWithFirestore(userId)) {
+    return [];
   }
   return fetchFirestoreChats(userId);
 }
 
 /**
- * Creates a new chat session in Firestore
+ * Creates a new chat session in Firestore and local storage
  */
 export async function createChat(
   userId: string,
   initial: Partial<ChatSession> = {}
 ): Promise<ChatSession> {
-  const chatsCol = collection(db, 'users', userId, 'chats');
-  const newChatDoc = doc(chatsCol);
+  const newId = 'chat_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
   const now = new Date().toISOString();
 
   const newChat: ChatSession = {
-    id: newChatDoc.id,
+    id: newId,
     title: initial.title || 'گفتگوی جدید',
     createdAt: now,
     updatedAt: now,
-    conversationPageUrl: initial.conversationPageUrl || window.location.href,
+    conversationPageUrl: initial.conversationPageUrl || (typeof window !== 'undefined' ? window.location.href : ''),
     candidateProfile: initial.candidateProfile || {
       technicalSkills: [],
       previousProjects: [],
@@ -126,13 +155,21 @@ export async function createChat(
   const currentLocal = getLocalChats(userId);
   saveLocalChats(userId, [newChat, ...currentLocal]);
 
-  // 2. Persist to Firestore in background without blocking the UI
-  setDoc(newChatDoc, {
-    ...newChat,
-    serverTimestamp: serverTimestamp(),
-  }).catch((err) => {
-    console.warn('Notice saving new chat to Firestore:', err?.message || err);
-  });
+  // 2. Persist to Firestore in background ONLY if user is genuinely authenticated
+  if (canSyncWithFirestore(userId)) {
+    try {
+      const chatsCol = collection(db, 'users', userId, 'chats');
+      const newChatDoc = doc(chatsCol, newId);
+      setDoc(newChatDoc, {
+        ...newChat,
+        serverTimestamp: serverTimestamp(),
+      }).catch((err) => {
+        if (/permission-denied|403/i.test(String(err?.message || err))) {
+          disableFirestoreSync();
+        }
+      });
+    } catch {}
+  }
 
   return newChat;
 }
@@ -145,18 +182,26 @@ export async function renameChat(
   chatId: string,
   newTitle: string
 ): Promise<void> {
-  try {
-    const chatDoc = doc(db, 'users', userId, 'chats', chatId);
-    await setDoc(
-      chatDoc,
-      {
-        title: newTitle.trim() || 'گفتگوی بدون عنوان',
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    );
-  } catch (err) {
-    console.warn('Notice renaming chat in Firestore:', err);
+  const local = getLocalChats(userId);
+  const idx = local.findIndex((c) => c.id === chatId);
+  if (idx >= 0) {
+    local[idx].title = newTitle.trim() || 'گفتگوی بدون عنوان';
+    local[idx].updatedAt = new Date().toISOString();
+    saveLocalChats(userId, local);
+  }
+
+  if (canSyncWithFirestore(userId)) {
+    try {
+      const chatDoc = doc(db, 'users', userId, 'chats', chatId);
+      setDoc(
+        chatDoc,
+        {
+          title: newTitle.trim() || 'گفتگوی بدون عنوان',
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch(() => {});
+    } catch {}
   }
 }
 
@@ -168,18 +213,25 @@ export async function updateChatMetadata(
   chatId: string,
   meta: Partial<ChatSession>
 ): Promise<void> {
-  try {
-    const chatDoc = doc(db, 'users', userId, 'chats', chatId);
-    await setDoc(
-      chatDoc,
-      {
-        ...meta,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    );
-  } catch (err) {
-    console.warn('Notice updating chat metadata in Firestore:', err);
+  const local = getLocalChats(userId);
+  const idx = local.findIndex((c) => c.id === chatId);
+  if (idx >= 0) {
+    local[idx] = { ...local[idx], ...meta, updatedAt: new Date().toISOString() };
+    saveLocalChats(userId, local);
+  }
+
+  if (canSyncWithFirestore(userId)) {
+    try {
+      const chatDoc = doc(db, 'users', userId, 'chats', chatId);
+      setDoc(
+        chatDoc,
+        {
+          ...meta,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch(() => {});
+    } catch {}
   }
 }
 
@@ -187,21 +239,26 @@ export async function updateChatMetadata(
  * Deletes a single chat and its messages
  */
 export async function deleteChat(userId: string, chatId: string): Promise<void> {
-  try {
-    const messagesCol = collection(db, 'users', userId, 'chats', chatId, 'messages');
-    const msgSnapshot = await getDocs(messagesCol);
-    const batch = writeBatch(db);
-    msgSnapshot.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
-  } catch (e) {
-    console.warn('Could not batch delete messages:', e);
+  const local = getLocalChats(userId);
+  const filtered = local.filter((c) => c.id !== chatId);
+  saveLocalChats(userId, filtered);
+
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(`growth_msgs_${userId}_${chatId}`);
   }
 
-  try {
-    const chatDoc = doc(db, 'users', userId, 'chats', chatId);
-    await deleteDoc(chatDoc);
-  } catch (err) {
-    console.warn('Notice deleting chat doc in Firestore:', err);
+  if (canSyncWithFirestore(userId)) {
+    try {
+      const messagesCol = collection(db, 'users', userId, 'chats', chatId, 'messages');
+      getDocs(messagesCol).then((msgSnapshot) => {
+        const batch = writeBatch(db);
+        msgSnapshot.docs.forEach((d) => batch.delete(d.ref));
+        batch.commit().catch(() => {});
+      }).catch(() => {});
+
+      const chatDoc = doc(db, 'users', userId, 'chats', chatId);
+      deleteDoc(chatDoc).catch(() => {});
+    } catch {}
   }
 }
 
@@ -209,9 +266,19 @@ export async function deleteChat(userId: string, chatId: string): Promise<void> 
  * Deletes all chats for the authenticated user
  */
 export async function deleteAllChats(userId: string): Promise<void> {
-  const chats = await listUserChats(userId);
-  for (const c of chats) {
-    await deleteChat(userId, c.id);
+  const chats = getLocalChats(userId);
+  saveLocalChats(userId, []);
+
+  if (typeof window !== 'undefined') {
+    for (const c of chats) {
+      localStorage.removeItem(`growth_msgs_${userId}_${c.id}`);
+    }
+  }
+
+  if (canSyncWithFirestore(userId)) {
+    for (const c of chats) {
+      deleteChat(userId, c.id).catch(() => {});
+    }
   }
 }
 
@@ -223,6 +290,9 @@ export async function loadChatMessages(userId: string, chatId: string): Promise<
   const local = getLocalMessages(userId, chatId);
   if (local.length > 0) {
     return local;
+  }
+  if (!canSyncWithFirestore(userId)) {
+    return [];
   }
   try {
     const messagesCol = collection(db, 'users', userId, 'chats', chatId, 'messages');
@@ -245,34 +315,15 @@ export async function loadChatMessages(userId: string, chatId: string): Promise<
     saveLocalMessages(userId, chatId, msgs);
     return msgs;
   } catch (err: any) {
-    console.warn('Notice loading chat messages with order:', err?.message || err);
-    try {
-      const messagesCol = collection(db, 'users', userId, 'chats', chatId, 'messages');
-      const snapshot = await getDocs(messagesCol);
-      const msgs = snapshot.docs.map((docSnap) => {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          role: data.role,
-          content: data.content || '',
-          timestamp: data.timestamp || Date.now(),
-          sources: data.sources || [],
-          projectCards: data.projectCards || [],
-          isStreaming: false,
-          isError: data.isError || false,
-        };
-      });
-      msgs.sort((a, b) => a.timestamp - b.timestamp);
-      saveLocalMessages(userId, chatId, msgs);
-      return msgs;
-    } catch {
-      return getLocalMessages(userId, chatId);
+    if (/permission-denied|403/i.test(String(err?.message || err))) {
+      disableFirestoreSync();
     }
+    return getLocalMessages(userId, chatId);
   }
 }
 
 /**
- * Persists a message to Firestore and local storage
+ * Persists a message to local storage and optionally Firestore
  */
 export async function saveChatMessage(
   userId: string,
@@ -281,7 +332,7 @@ export async function saveChatMessage(
 ): Promise<void> {
   if (!userId || !chatId || !msg.id) return;
 
-  // Always save locally first so user experience is instant and never lost
+  // 1. Always save locally first so user experience is instant and never lost
   try {
     const localMsgs = getLocalMessages(userId, chatId);
     const existingIdx = localMsgs.findIndex((m) => m.id === msg.id);
@@ -302,29 +353,37 @@ export async function saveChatMessage(
     }
   } catch {}
 
-  // Attempt persisting to Firestore in background (non-blocking)
-  try {
-    const msgDoc = doc(db, 'users', userId, 'chats', chatId, 'messages', msg.id);
-    setDoc(msgDoc, {
-      role: msg.role,
-      content: msg.content,
-      timestamp: msg.timestamp,
-      sources: msg.sources || [],
-      projectCards: msg.projectCards || [],
-      isError: Boolean(msg.isError),
-    }).catch(() => {});
+  // 2. Persist to Firestore ONLY if user is genuinely authenticated
+  if (canSyncWithFirestore(userId)) {
+    try {
+      const msgDoc = doc(db, 'users', userId, 'chats', chatId, 'messages', msg.id);
+      setDoc(msgDoc, {
+        role: msg.role,
+        content: msg.content,
+        timestamp: msg.timestamp,
+        sources: msg.sources || [],
+        projectCards: msg.projectCards || [],
+        isError: Boolean(msg.isError),
+      }).catch((err) => {
+        if (/permission-denied|403/i.test(String(err?.message || err))) {
+          disableFirestoreSync();
+        }
+      });
 
-    const preview = msg.content.substring(0, 80);
-    const chatDoc = doc(db, 'users', userId, 'chats', chatId);
-    setDoc(
-      chatDoc,
-      {
-        lastMessagePreview: preview,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    ).catch(() => {});
-  } catch (err: any) {
-    console.warn('Notice persisting chat message to Firestore (cached locally):', err?.message || err);
+      const preview = msg.content.substring(0, 80);
+      const chatDoc = doc(db, 'users', userId, 'chats', chatId);
+      setDoc(
+        chatDoc,
+        {
+          lastMessagePreview: preview,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch((err) => {
+        if (/permission-denied|403/i.test(String(err?.message || err))) {
+          disableFirestoreSync();
+        }
+      });
+    } catch {}
   }
 }

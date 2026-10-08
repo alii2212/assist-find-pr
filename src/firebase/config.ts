@@ -3,6 +3,7 @@ import {
   getAuth,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithCredential,
   signOut,
   onAuthStateChanged,
   type User,
@@ -11,6 +12,18 @@ import {
 } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfigJson from '../../firebase-applet-config.json';
+
+// Suppress harmless internal WebChannel connection transport retries in console
+if (typeof window !== 'undefined') {
+  const originalWarn = console.warn;
+  console.warn = (...args: any[]) => {
+    const firstStr = String(args[0] || '');
+    if (firstStr.includes('WebChannelConnection RPC') || firstStr.includes('@firebase/firestore')) {
+      return;
+    }
+    originalWarn.apply(console, args);
+  };
+}
 
 // Initialize Firebase App singleton
 export const firebaseApp = getApps().length === 0
@@ -21,10 +34,9 @@ export const auth = getAuth(firebaseApp);
 
 // Initialize Firestore database instance
 const databaseId = (firebaseConfigJson as any).firestoreDatabaseId;
-export const db = databaseId
+export const db = (databaseId && databaseId !== '(default)')
   ? getFirestore(firebaseApp, databaseId)
   : getFirestore(firebaseApp);
-
 
 // Configure session persistence
 setPersistence(auth, browserLocalPersistence).catch((err) => {
@@ -154,6 +166,12 @@ export async function loginWithGoogle(): Promise<any> {
                 token: data.token,
                 getIdToken: async () => data.token,
               };
+
+              // Optionally link with Firebase Auth to populate auth.currentUser
+              try {
+                const cred = GoogleAuthProvider.credential(null, tokenResponse.access_token);
+                await signInWithCredential(auth, cred);
+              } catch (_) {}
 
               localAppUser = userObj;
               localStorage.setItem('growth_app_user_session', JSON.stringify(userObj));
