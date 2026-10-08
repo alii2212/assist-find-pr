@@ -41,6 +41,18 @@ apiRouter.use((req: Request, res: Response, next) => {
   next();
 });
 
+// Health & Version Endpoint
+apiRouter.get('/health', (_req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    app: 'Yazd InnoFaraz AI Project Advisor',
+    version: '2.5.0',
+    model: 'gemini-3.1-flash-lite',
+    timestamp: new Date().toISOString(),
+    uptimeSeconds: Math.floor(process.uptime()),
+  });
+});
+
 // --------------------------------------------------------------------
 // Anti-Sanction Proxies for Firebase (Bypasses Iran IP blocks from Google)
 // --------------------------------------------------------------------

@@ -41,7 +41,7 @@ interface AssistantWidgetProps {
   activeChat: ChatSession | null;
   messages: ChatMessage[];
   isStreaming: boolean;
-  onSendMessage: (text: string) => Promise<void>;
+  onSendMessage: (text: string) => Promise<boolean | void>;
   onNewChat: () => void;
   onSelectChat: (chatId: string) => void;
   onRenameChat: (chatId: string, newTitle: string) => Promise<void>;
@@ -119,11 +119,13 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
   const handleSend = async () => {
     const text = inputText.trim();
     if (!text || isStreaming) return;
-    setInputText('');
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+    const sent = await onSendMessage(text);
+    if (sent !== false) {
+      setInputText('');
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
     }
-    await onSendMessage(text);
   };
 
   const handleCopy = (id: string, text: string) => {

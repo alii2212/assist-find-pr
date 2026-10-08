@@ -291,13 +291,21 @@ export function isUserAdmin(userOrUid: { uid: string; email?: string } | string)
     return true;
   }
 
-  // 2. Check ADMIN_EMAILS environment variable (optional extra layer from secrets)
+  // 2. Check ADMIN_EMAILS environment variable or authorized administrator emails
+  const defaultAdminEmails = [
+    'ifitat55@gmail.com',
+    'admin@yazdinnofaraz.ir',
+    'yazdinnofaraz@gmail.com',
+  ];
+
   const envAdminEmails = (process.env.ADMIN_EMAILS || '')
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
 
-  if (email && envAdminEmails.includes(email)) {
+  const allowedEmails = new Set([...defaultAdminEmails, ...envAdminEmails]);
+
+  if (email && allowedEmails.has(email)) {
     return true;
   }
 

@@ -3,6 +3,7 @@ import { GrowthCenterBackdrop } from './components/GrowthCenterBackdrop.tsx';
 import { AssistantWidget } from './components/AssistantWidget.tsx';
 import { AdminKnowledgePanel } from './components/AdminKnowledgePanel.tsx';
 import { AdminDashboardPage } from './components/AdminDashboardPage.tsx';
+import { LoginPromptModal } from './components/LoginPromptModal.tsx';
 import { ChatMessage, ChatSession } from './types/chat.ts';
 import { CandidateProfile } from './types/project.ts';
 import {
@@ -75,6 +76,15 @@ export default function App() {
   const [isStreaming, setIsStreaming] = useState<boolean>(false);
   const [currentError, setCurrentError] = useState<string | null>(null);
 
+  // Guest restriction & Preserved pending question state
+  const [pendingQuestion, setPendingQuestion] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('growth_pending_guest_question');
+    }
+    return null;
+  });
+  const [showLoginPromptModal, setShowLoginPromptModal] = useState<boolean>(false);
+
   const activeChat = chats.find((c) => c.id === activeChatId) || null;
 
   // Persist widget open preference
@@ -89,7 +99,8 @@ export default function App() {
       if (user) {
         setUserId(user.uid);
         setUserEmail(user.email || null);
-        setIsAuthenticated(true);
+        const isRealUser = Boolean(user.email && !user.isGuest);
+        setIsAuthenticated(isRealUser);
 
         // Check Admin privilege via server
         try {
@@ -103,8 +114,21 @@ export default function App() {
           console.warn('Admin check error:', e);
         }
 
-        // Load user's persistent chats from Firestore
+        // Load user's persistent chats from Firestore / Local
         await reloadUserChats(user.uid);
+
+        // If user just logged in with Google and had a saved pending question, send it automatically!
+        if (isRealUser && typeof window !== 'undefined') {
+          const savedPending = localStorage.getItem('growth_pending_guest_question');
+          if (savedPending) {
+            localStorage.removeItem('growth_pending_guest_question');
+            setPendingQuestion(null);
+            setShowLoginPromptModal(false);
+            setTimeout(() => {
+              handleSendMessage(savedPending);
+            }, 600);
+          }
+        }
       } else {
         setUserId(null);
         setUserEmail(null);
@@ -176,6 +200,14 @@ export default function App() {
   const handleLogout = async () => {
     try {
       await logoutUser();
+      const guestSession = await ensureSession();
+      if (guestSession) {
+        setUserId(guestSession.uid);
+        setUserEmail(null);
+        setIsAuthenticated(false);
+        setIsAdmin(false);
+        await reloadUserChats(guestSession.uid);
+      }
     } catch (err) {
       console.error('Logout error:', err);
     }
@@ -293,10 +325,24 @@ export default function App() {
         currentChatId = newChat.id;
       }
 
+      // Check Guest Question Limit: Question 1 is free for guests.
+      // Question 2 onwards requires Google login.
+      const isGoogleLoggedIn = Boolean(userEmail && isAuthenticated && !currentUid.startsWith('guest_'));
+      const previousUserQuestions = messages.filter((m) => m.role === 'user').length;
+
+      if (!isGoogleLoggedIn && previousUserQuestions >= 1) {
+        setPendingQuestion(text.trim());
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('growth_pending_guest_question', text.trim());
+        }
+        setShowLoginPromptModal(true);
+        return false;
+      }
+
       const token = await getCurrentIdToken();
       if (!token) {
         setCurrentError('در حال برقراری اتصال... لطفاً دوباره امتحان فرمایید.');
-        return;
+        return false;
       }
 
       const userMsgId = 'msg_u_' + Date.now();
@@ -478,6 +524,7 @@ export default function App() {
             )
           );
         }
+        return true;
       } catch (streamErr: any) {
         console.error('Streaming request error:', streamErr);
         const errFinal: ChatMessage = {
@@ -492,6 +539,7 @@ export default function App() {
           prev.map((m) => (m.id === asstMsgId ? errFinal : m))
         );
         await saveChatMessage(currentUid, currentChatId, errFinal);
+        return false;
       } finally {
         setIsStreaming(false);
       }
@@ -538,6 +586,16 @@ export default function App() {
           currentError={currentError}
           onDismissError={() => setCurrentError(null)}
         />
+
+        {/* Guest Question Limit Modal */}
+        <LoginPromptModal
+          isOpen={showLoginPromptModal}
+          onClose={() => setShowLoginPromptModal(false)}
+          pendingQuestion={pendingQuestion}
+          onLogin={async () => {
+            await handleLogin();
+          }}
+        />
       </div>
     );
   }
@@ -582,6 +640,16 @@ export default function App() {
         onApplyResumeText={handleApplyResumeText}
         currentError={currentError}
         onDismissError={() => setCurrentError(null)}
+      />
+
+      {/* Guest Question Limit Modal */}
+      <LoginPromptModal
+        isOpen={showLoginPromptModal}
+        onClose={() => setShowLoginPromptModal(false)}
+        pendingQuestion={pendingQuestion}
+        onLogin={async () => {
+          await handleLogin();
+        }}
       />
 
       {/* Admin Knowledge Management Panel (Modal shortcut) */}

@@ -403,7 +403,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   }
 
   // Render Unauthorized / Login Required
-  if (!currentUser) {
+  if (!currentUser || currentUser.isGuest || !currentUser.email) {
     return (
       <div dir="rtl" className="min-h-screen bg-[#f8f7fc] flex flex-col items-center justify-center text-slate-700 font-sans p-6">
         <div className="w-full max-w-md bg-white border border-purple-150 rounded-3xl p-8 text-center shadow-2xl space-y-5">
@@ -413,12 +413,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
           <div>
             <h1 className="text-xl font-black text-slate-900">ورود به پنل مدیریت دستیار هوشمند</h1>
             <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-              برای مدیریت حوزه‌های پروژه، دانش سایت و جهت‌دهی دستیار، ابتدا با حساب کاربری Google مجاز وارد شوید.
+              برای مدیریت حوزه‌های پروژه، پایگاه دانش و جهت‌دهی دستیار، ابتدا با حساب کاربری Google مجاز وارد شوید.
             </p>
           </div>
 
           {authError && (
-            <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 text-xs">
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
               {authError}
             </div>
           )}
@@ -449,22 +449,25 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   if (!isAdmin) {
     return (
       <div dir="rtl" className="min-h-screen bg-[#f8f7fc] flex flex-col items-center justify-center text-slate-700 font-sans p-6">
-        <div className="w-full max-w-md bg-white border border-rose-900/40 rounded-3xl p-8 text-center shadow-2xl space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 mx-auto">
+        <div className="w-full max-w-md bg-white border border-rose-200 rounded-3xl p-8 text-center shadow-2xl space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-500 mx-auto">
             <AlertTriangle className="w-8 h-8" />
           </div>
-          <h1 className="text-lg font-black text-rose-300">
+          <h1 className="text-lg font-black text-rose-600">
             شما اجازه دسترسی به پنل مدیریت را ندارید.
           </h1>
-          <p className="text-xs text-slate-500 leading-relaxed">
-            حساب کاربری فعلی شما (<span className="font-mono text-purple-700">{currentUser?.email}</span>) در فهرست مدیران مجاز سرور ثبت نشده است. دسترسی به پیکربندی، سوابق و دانش سایت محافظت شده است.
+          <p className="text-xs text-slate-600 leading-relaxed">
+            حساب کاربری فعلی شما (<span className="font-mono text-purple-700 font-bold">{currentUser?.email}</span>) در فهرست مدیران مجاز ثبت نشده است. برای دسترسی، با حساب ایمیل ادمین وارد شوید.
           </p>
 
           <div className="pt-2 flex flex-col gap-2">
             <button
               type="button"
-              onClick={handleLogout}
-              className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+              onClick={async () => {
+                await logoutUser();
+                await handleLogin();
+              }}
+              className="w-full py-2.5 px-4 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-semibold cursor-pointer shadow-md transition-all"
             >
               خروج و ورود با حسابی دیگر
             </button>
