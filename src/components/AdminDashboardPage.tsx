@@ -458,33 +458,50 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
     }
   };
 
-  // Host and Widget configuration for embedding in WordPress & Elementor
-  const sharedOrigin = 'https://ais-pre-jpusmsdrg4bi5d447purk4-558511060556.europe-west3.run.app';
-  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : sharedOrigin;
+  // User Persistent App Base Domain (defaults to Render domain, remembered across page refreshes)
+  const defaultRenderDomain = 'https://assist-find-pr1.onrender.com';
+  const [appDomain, setAppDomain] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('yazd_assistant_app_domain');
+      if (saved && saved.trim()) return saved.trim();
+    }
+    return defaultRenderDomain;
+  });
+  const [domainSavedNotice, setDomainSavedNotice] = useState<boolean>(false);
 
-  const [embedHostOption, setEmbedHostOption] = useState<'shared' | 'current' | 'custom'>('shared');
-  const [customHost, setCustomHost] = useState<string>('https://yazdinnofaraz.ir');
-  const [widgetUrlInput, setWidgetUrlInput] = useState<string>(`${sharedOrigin}/widget`);
-  const [isTestPreviewOpen, setIsTestPreviewOpen] = useState<boolean>(false);
+  // Helper to normalize input domain (strips trailing /widget, slashes, ensures https://)
+  const cleanAppDomain = (raw: string): string => {
+    let clean = (raw || '').trim();
+    if (!clean) return defaultRenderDomain;
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = 'https://' + clean;
+    }
+    // Remove trailing /widget or /widget/
+    clean = clean.replace(/\/widget\/?$/i, '');
+    // Remove trailing slashes
+    clean = clean.replace(/\/+$/, '');
+    return clean;
+  };
 
-  const handleHostOptionSelect = (option: 'shared' | 'current' | 'custom') => {
-    setEmbedHostOption(option);
-    if (option === 'shared') {
-      setWidgetUrlInput(`${sharedOrigin}/widget`);
-    } else if (option === 'current') {
-      setWidgetUrlInput(`${currentOrigin}/widget`);
-    } else if (option === 'custom') {
-      const cleanCustom = customHost.trim().replace(/\/+$/, '') || 'https://yazdinnofaraz.ir';
-      setWidgetUrlInput(`${cleanCustom}/widget`);
+  const normalizedDomain = cleanAppDomain(appDomain);
+  const widgetUrl = `${normalizedDomain}/widget`;
+  const healthUrl = `${normalizedDomain}/health`;
+
+  const handleDomainChange = (val: string) => {
+    setAppDomain(val);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('yazd_assistant_app_domain', val.trim());
     }
   };
 
-  const handleCustomHostChange = (val: string) => {
-    setCustomHost(val);
-    const clean = val.trim().replace(/\/+$/, '');
-    if (clean) {
-      setWidgetUrlInput(`${clean}/widget`);
+  const handleSaveAppDomain = () => {
+    const cleaned = cleanAppDomain(appDomain);
+    setAppDomain(cleaned);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('yazd_assistant_app_domain', cleaned);
     }
+    setDomainSavedNotice(true);
+    setTimeout(() => setDomainSavedNotice(false), 3000);
   };
 
   // Cron Job states & helpers to keep Render / cloud hosting server awake
@@ -492,9 +509,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   const [healthTestStatus, setHealthTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
   const [healthTestLatency, setHealthTestLatency] = useState<number | null>(null);
 
-  const hostBaseUrl = widgetUrlInput.replace(/\/widget\/?$/, '') || sharedOrigin;
-  const cronCurlCommand = `*/10 * * * * curl -s -f ${hostBaseUrl}/health > /dev/null 2>&1`;
-  const cronWgetCommand = `*/10 * * * * wget -q -O - ${hostBaseUrl}/health > /dev/null 2>&1`;
+  const cronCurlCommand = `*/10 * * * * curl -s -f ${healthUrl} > /dev/null 2>&1`;
+  const cronWgetCommand = `*/10 * * * * wget -q -O - ${healthUrl} > /dev/null 2>&1`;
 
   const handleCopyCronCode = () => {
     navigator.clipboard.writeText(cronCurlCommand);
@@ -743,7 +759,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 </script>
 <!-- پایان کد هوشمند دستیار انتخاب پروژه -->`.trim();
 
-  const currentEmbedCode = generateWordPressEmbedCode(widgetUrlInput);
+  const currentEmbedCode = generateWordPressEmbedCode(widgetUrl);
 
   const handleCopyEmbedCode = () => {
     navigator.clipboard.writeText(currentEmbedCode);
@@ -2100,84 +2116,50 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                   </button>
                 </div>
 
-                {/* Host Source Selector */}
+                {/* Single Persistent Domain Box */}
                 <div className="p-4 rounded-xl bg-[#f8f7fc] border border-purple-150 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700 block">۱. انتخاب یا تعیین دامنه و میزبان ویجت:</span>
-                    <span className="text-[11px] text-purple-700 font-semibold bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
-                      تنظیم خودکار بر اساس سرور
-                    </span>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleHostOptionSelect('shared')}
-                      className={`p-3 rounded-xl border text-right transition-all cursor-pointer ${
-                        embedHostOption === 'shared'
-                          ? 'border-purple-600 bg-purple-50 text-slate-900 ring-2 ring-purple-600/20'
-                          : 'border-purple-150 bg-white text-slate-500 hover:border-purple-200'
-                      }`}
-                    >
-                      <span className="block text-xs font-bold text-purple-700">دامنه عمومی ابری (پیش‌فرض)</span>
-                      <span className="block text-[10px] text-slate-500 mt-0.5 dir-ltr truncate">ais-pre-...run.app</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleHostOptionSelect('current')}
-                      className={`p-3 rounded-xl border text-right transition-all cursor-pointer ${
-                        embedHostOption === 'current'
-                          ? 'border-purple-600 bg-purple-50 text-slate-900 ring-2 ring-purple-600/20'
-                          : 'border-purple-150 bg-white text-slate-500 hover:border-purple-200'
-                      }`}
-                    >
-                      <span className="block text-xs font-bold text-amber-600">دامنه جاری سرور / مرورگر</span>
-                      <span className="block text-[10px] text-slate-500 mt-0.5 dir-ltr truncate">{currentOrigin}</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleHostOptionSelect('custom')}
-                      className={`p-3 rounded-xl border text-right transition-all cursor-pointer ${
-                        embedHostOption === 'custom'
-                          ? 'border-purple-600 bg-purple-50 text-slate-900 ring-2 ring-purple-600/20'
-                          : 'border-purple-150 bg-white text-slate-500 hover:border-purple-200'
-                      }`}
-                    >
-                      <span className="block text-xs font-bold text-indigo-600">دامنه اختصاصی شما</span>
-                      <span className="block text-[10px] text-slate-500 mt-0.5">مانند assistant.yazdinnofaraz.ir</span>
-                    </button>
-                  </div>
-
-                  {embedHostOption === 'custom' && (
-                    <div className="pt-2">
-                      <label className="text-[11px] text-slate-600 block mb-1 font-semibold">دامنه پایه اختصاصی (با https://):</label>
-                      <input
-                        type="url"
-                        placeholder="https://assistant.yazdinnofaraz.ir"
-                        value={customHost}
-                        onChange={(e) => handleCustomHostChange(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-purple-200 text-xs text-slate-900 font-mono dir-ltr focus:outline-none focus:border-purple-600"
-                      />
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <label className="text-xs font-bold text-slate-800 block">
+                        آدرس دامنه اصلی سرور برنامه (محل نصب یا اجرای دستیار):
+                      </label>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        فقط دامنه اصلی را وارد کنید (مثلاً <code className="font-mono text-purple-700 bg-purple-50 px-1 py-0.5 rounded">https://assist-find-pr1.onrender.com/</code>). این آدرس در حافظه مرورگر شما ذخیره دائمی می‌شود تا با رفرش صفحه از بین نرود. مسیر <code className="font-mono text-purple-700">/widget</code> به صورت خودکار به کد نهایی افزوده می‌شود.
+                      </p>
                     </div>
-                  )}
 
-                  {/* Direct Editable Widget URL Box */}
-                  <div className="pt-2 border-t border-purple-150">
-                    <label className="text-[11px] text-slate-700 block mb-1 font-bold">
-                      ۲. آدرس نهایی ویجت دستیار (می‌توانید مستقیم نیز ویرایش کنید):
-                    </label>
+                    <button
+                      type="button"
+                      onClick={handleSaveAppDomain}
+                      className="px-3.5 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>{domainSavedNotice ? 'ذخیره شد ✅' : 'ذخیره دامنه'}</span>
+                    </button>
+                  </div>
+
+                  <div className="relative">
                     <input
-                      type="url"
-                      value={widgetUrlInput}
-                      onChange={(e) => setWidgetUrlInput(e.target.value)}
-                      placeholder="https://ais-pre-...run.app/widget"
-                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-purple-200 text-xs text-slate-900 font-mono dir-ltr focus:outline-none focus:border-purple-600 shadow-xs"
+                      type="text"
+                      value={appDomain}
+                      onChange={(e) => handleDomainChange(e.target.value)}
+                      placeholder="https://assist-find-pr1.onrender.com"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-purple-200 text-xs text-slate-900 font-mono dir-ltr focus:outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-600/20 shadow-xs"
                     />
-                    <p className="text-[10px] text-slate-500 mt-1">
-                      با تغییر این آدرس، کد HTML آماده برای کپی به صورت خودکار و زنده با آدرس جدید جایگزین می‌شود.
-                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4 text-[11px] text-slate-600 pt-0.5">
+                    <span>
+                      آدرس مستقیم ویجت: <strong className="font-mono text-purple-700 dir-ltr">{widgetUrl}</strong>
+                    </span>
+                    <span>
+                      آدرس پینگ/کرون: <strong className="font-mono text-emerald-700 dir-ltr">{healthUrl}</strong>
+                    </span>
+                    {domainSavedNotice && (
+                      <span className="text-emerald-700 font-bold">
+                        ✓ با موفقیت در حافظه ذخیره شد و در دفعات بعد باقی می‌ماند.
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -2198,7 +2180,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                 <div className="space-y-2 pt-2">
                   <div className="flex items-center justify-between text-xs text-slate-600">
                     <span className="font-bold">کد نهایی HTML برای قرار دادن در المنتور یا وردپرس:</span>
-                    <span className="font-mono text-purple-700 dir-ltr text-[11px]">{widgetUrlInput}</span>
+                    <span className="font-mono text-purple-700 dir-ltr text-[11px]">{widgetUrl}</span>
                   </div>
 
                   <pre className="bg-[#f8f7fc] p-4 rounded-xl border border-purple-150 text-[11px] font-mono text-slate-700 overflow-x-auto dir-ltr max-h-72 select-all">

@@ -552,13 +552,16 @@ export default function App() {
     handleSendMessage(`من رزومه و سوابق خود را به شرح زیر ارسال می‌کنم:\n\n${cvText}\n\nلطفاً بر اساس این اطلاعات، مناسب‌ترین پروژه‌های فعال مرکز رشد نوفرآز را به من پیشنهاد بده.`);
   };
 
+  const isWidgetRoute = currentPath.toLowerCase().replace(/\/+$/, '') === '/widget' || currentPath.toLowerCase().startsWith('/widget/');
+  const isAdminRoute = currentPath.toLowerCase().replace(/\/+$/, '') === '/admin' || currentPath.toLowerCase().startsWith('/admin/');
+
   // 1. Standalone Admin Dashboard Route (/admin)
-  if (currentPath === '/admin') {
+  if (isAdminRoute) {
     return <AdminDashboardPage onBackToApp={() => navigateTo('/')} />;
   }
 
   // 2. Standalone Embeddable Widget Route (/widget)
-  if (currentPath === '/widget') {
+  if (isWidgetRoute) {
     return (
       <div dir="rtl" className="w-full h-full min-h-screen bg-[#f8f7fc] font-sans text-slate-800 flex flex-col justify-end sm:justify-start">
         <AssistantWidget

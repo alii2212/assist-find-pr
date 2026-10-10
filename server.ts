@@ -16,14 +16,19 @@ async function startServer() {
   // Parse JSON bodies
   app.use(express.json({ limit: '15mb' }));
 
-  // Embedding & CSP security headers
-  app.use((_req, res, next) => {
-    res.setHeader(
-      'Content-Security-Policy',
-      "frame-ancestors 'self' https://yazdinnofaraz.ir https://www.yazdinnofaraz.ir https://*.run.app https://*.onrender.com;"
-    );
-    res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  // Embedding & CSP security headers (allows embedding in Elementor / WordPress on any domain)
+  app.use((req, res, next) => {
+    // Allow iframe embedding anywhere without CSP blockage
+    res.setHeader('Content-Security-Policy', "frame-ancestors *;");
     res.removeHeader('X-Frame-Options');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    // Cross-Origin-Opener-Policy blocks documents when embedded inside an iframe!
+    // Do NOT send COOP on widget iframe routes or when requested inside an iframe
+    const isWidgetRequest = req.path.startsWith('/widget') || req.headers['sec-fetch-dest'] === 'iframe';
+    if (!isWidgetRequest) {
+      res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+    }
     next();
   });
 
