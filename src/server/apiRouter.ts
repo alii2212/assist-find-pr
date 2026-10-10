@@ -12,8 +12,9 @@ import {
   loadSyncStatus,
   synchronizeWebsiteKnowledge,
   DEFAULT_ASSISTANT_DIRECTION,
+  DEFAULT_CATALOG_CONFIG,
 } from './crawlerService.ts';
-import type { ProjectDomainConfig } from '../types/admin.ts';
+import type { ProjectDomainConfig, AssistantDirectionConfig } from '../types/admin.ts';
 import { PDFParse } from 'pdf-parse';
 
 export const apiRouter = Router();
@@ -362,7 +363,7 @@ apiRouter.delete('/admin/domains/:id', async (req: Request, res: Response) => {
   res.json({ success: true, domains });
 });
 
-// Update Assistant Direction text
+// Update Assistant Direction and Project Catalog settings
 apiRouter.post('/admin/assistant-direction', async (req: Request, res: Response) => {
   const admin = await getAuthorizedAdmin(req);
   if (!admin) {
@@ -370,14 +371,17 @@ apiRouter.post('/admin/assistant-direction', async (req: Request, res: Response)
     return;
   }
 
-  const { directionText } = req.body || {};
+  const { directionText, catalogConfig } = req.body || {};
   if (!directionText || typeof directionText !== 'string') {
     res.status(400).json({ error: 'EMPTY_TEXT', message: 'متن جهت‌دهی نمی‌تواند خالی باشد.' });
     return;
   }
 
-  const updatedConfig = {
+  const current = loadAssistantDirection();
+
+  const updatedConfig: AssistantDirectionConfig = {
     directionText: directionText.trim(),
+    catalogConfig: catalogConfig || current.catalogConfig || DEFAULT_CATALOG_CONFIG,
     updatedAt: new Date().toISOString(),
     updatedBy: admin.uid,
   };
@@ -394,8 +398,9 @@ apiRouter.post('/admin/assistant-direction/reset', async (req: Request, res: Res
     return;
   }
 
-  const resetConfig = {
+  const resetConfig: AssistantDirectionConfig = {
     directionText: DEFAULT_ASSISTANT_DIRECTION,
+    catalogConfig: DEFAULT_CATALOG_CONFIG,
     updatedAt: new Date().toISOString(),
     updatedBy: admin.uid,
   };

@@ -10,18 +10,27 @@ import {
   setPersistence,
   browserLocalPersistence,
 } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfigJson from '../../firebase-applet-config.json';
 
-// Suppress harmless internal WebChannel connection transport retries in console
+// Suppress harmless internal WebChannel connection transport retries and stream errors in console
 if (typeof window !== 'undefined') {
   const originalWarn = console.warn;
   console.warn = (...args: any[]) => {
     const firstStr = String(args[0] || '');
-    if (firstStr.includes('WebChannelConnection RPC') || firstStr.includes('@firebase/firestore')) {
+    if (firstStr.includes('WebChannelConnection') || firstStr.includes('@firebase/firestore')) {
       return;
     }
     originalWarn.apply(console, args);
+  };
+
+  const originalError = console.error;
+  console.error = (...args: any[]) => {
+    const firstStr = String(args[0] || '');
+    if (firstStr.includes('WebChannelConnection') || firstStr.includes('@firebase/firestore')) {
+      return;
+    }
+    originalError.apply(console, args);
   };
 }
 
@@ -32,11 +41,20 @@ export const firebaseApp = getApps().length === 0
 
 export const auth = getAuth(firebaseApp);
 
-// Initialize Firestore database instance
+// Initialize Firestore database instance with auto long polling to prevent WebChannel Write stream broken pipes
 const databaseId = (firebaseConfigJson as any).firestoreDatabaseId;
-export const db = (databaseId && databaseId !== '(default)')
-  ? getFirestore(firebaseApp, databaseId)
-  : getFirestore(firebaseApp);
+export const db = (() => {
+  try {
+    if (databaseId && databaseId !== '(default)') {
+      return initializeFirestore(firebaseApp, { experimentalAutoDetectLongPolling: true }, databaseId);
+    }
+    return initializeFirestore(firebaseApp, { experimentalAutoDetectLongPolling: true });
+  } catch {
+    return (databaseId && databaseId !== '(default)')
+      ? getFirestore(firebaseApp, databaseId)
+      : getFirestore(firebaseApp);
+  }
+})();
 
 // Configure session persistence
 setPersistence(auth, browserLocalPersistence).catch((err) => {

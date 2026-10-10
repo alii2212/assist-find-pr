@@ -20,6 +20,8 @@ import {
   ProjectDomainConfig,
   SyncStatusReport,
   FailedUrlRecord,
+  ProjectCatalogConfig,
+  ProjectCategoryStat,
 } from '../types/admin.ts';
 import { getCurrentIdToken } from '../firebase/config.ts';
 
@@ -55,8 +57,32 @@ export const AdminKnowledgePanel: React.FC<AdminKnowledgePanelProps> = ({
     guidanceText: '',
   });
 
-  // Assistant Direction
+  // Assistant Direction & Catalog Config
   const [directionText, setDirectionText] = useState<string>('');
+  const [catalogConfig, setCatalogConfig] = useState<ProjectCatalogConfig>({
+    catalogUrl: 'https://yazdinnofaraz.ir/categories/',
+    catalogUrlPatterns: ['/categories/', '/categories/*'],
+    enforceCatalogOnlyForProjects: true,
+    generalPagesGuidance: '',
+    categories: [],
+  });
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [showCategoryForm, setShowCategoryForm] = useState<boolean>(false);
+  const [categoryForm, setCategoryForm] = useState<{
+    name: string;
+    subUrl: string;
+    projectCount: number;
+    keySkillsText: string;
+    description: string;
+    active: boolean;
+  }>({
+    name: '',
+    subUrl: '',
+    projectCount: 0,
+    keySkillsText: '',
+    description: '',
+    active: true,
+  });
   const [isSavingDirection, setIsSavingDirection] = useState<boolean>(false);
   const [directionSuccessMsg, setDirectionSuccessMsg] = useState<string | null>(null);
 
@@ -107,7 +133,12 @@ export const AdminKnowledgePanel: React.FC<AdminKnowledgePanelProps> = ({
       if (res.ok) {
         const data = await res.json();
         setDomains(data.domains || []);
-        setDirectionText(data.assistantDirection?.directionText || '');
+        if (data.assistantDirection) {
+          setDirectionText(data.assistantDirection.directionText || '');
+          if (data.assistantDirection.catalogConfig) {
+            setCatalogConfig(data.assistantDirection.catalogConfig);
+          }
+        }
         setSyncStatus(data.syncStatus || null);
       }
     } catch (err) {
@@ -193,7 +224,7 @@ export const AdminKnowledgePanel: React.FC<AdminKnowledgePanelProps> = ({
     }
   };
 
-  // Save Assistant Direction
+  // Save Assistant Direction & Catalog Config
   const handleSaveDirection = async () => {
     setIsSavingDirection(true);
     setDirectionSuccessMsg(null);
@@ -205,10 +236,13 @@ export const AdminKnowledgePanel: React.FC<AdminKnowledgePanelProps> = ({
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ directionText }),
+        body: JSON.stringify({
+          directionText,
+          catalogConfig,
+        }),
       });
       if (res.ok) {
-        setDirectionSuccessMsg('جهت‌دهی دستیار ذخیره شد و در مکالمات جدید بلافاصله اعمال خواهد شد.');
+        setDirectionSuccessMsg('جهت‌دهی دستیار و تنظیمات کاتالوگ ذخیره شد و در مکالمات جدید بلافاصله اعمال خواهد شد.');
         setTimeout(() => setDirectionSuccessMsg(null), 4000);
       } else {
         setGeneralError('خطا در ذخیره جهت‌دهی دستیار');
@@ -219,6 +253,114 @@ export const AdminKnowledgePanel: React.FC<AdminKnowledgePanelProps> = ({
     } finally {
       setIsSavingDirection(false);
     }
+  };
+
+  const handleResetDirection = async () => {
+    if (!window.confirm('آیا از بازگردانی تنظیمات پیش‌فرض کاتالوگ و جهت‌دهی مطمئن هستید؟')) return;
+    try {
+      const token = await getCurrentIdToken();
+      const res = await fetch('/api/admin/assistant-direction/reset', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setDirectionText(data.assistantDirection.directionText);
+        if (data.assistantDirection.catalogConfig) {
+          setCatalogConfig(data.assistantDirection.catalogConfig);
+        }
+        setDirectionSuccessMsg('تنظیمات پیش‌فرض بازگردانده شد.');
+        setTimeout(() => setDirectionSuccessMsg(null), 4000);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Category Actions
+  const handleToggleCategoryActive = (catId: string) => {
+    setCatalogConfig((prev) => ({
+      ...prev,
+      categories: prev.categories.map((c) =>
+        c.id === catId ? { ...c, active: !c.active } : c
+      ),
+    }));
+  };
+
+  const handleDeleteCategory = (catId: string) => {
+    if (!window.confirm('آیا از حذف این حوزه از کاتالوگ اطمینان دارید؟')) return;
+    setCatalogConfig((prev) => ({
+      ...prev,
+      categories: prev.categories.filter((c) => c.id !== catId),
+    }));
+  };
+
+  const handleStartEditCategory = (cat: ProjectCategoryStat) => {
+    setEditingCategoryId(cat.id);
+    setCategoryForm({
+      name: cat.name,
+      subUrl: cat.subUrl || '',
+      projectCount: cat.projectCount || 0,
+      keySkillsText: (cat.keySkills || []).join('، '),
+      description: cat.description || '',
+      active: cat.active,
+    });
+    setShowCategoryForm(true);
+  };
+
+  const handleSaveCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryForm.name.trim()) return;
+
+    const skills = categoryForm.keySkillsText
+      .split(/[,،]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (editingCategoryId) {
+      setCatalogConfig((prev) => ({
+        ...prev,
+        categories: prev.categories.map((c) =>
+          c.id === editingCategoryId
+            ? {
+                ...c,
+                name: categoryForm.name.trim(),
+                subUrl: categoryForm.subUrl.trim(),
+                projectCount: Number(categoryForm.projectCount) || 0,
+                keySkills: skills,
+                description: categoryForm.description.trim(),
+                active: categoryForm.active,
+              }
+            : c
+        ),
+      }));
+    } else {
+      const newId = 'cat_' + Date.now().toString(36);
+      const newCat: ProjectCategoryStat = {
+        id: newId,
+        name: categoryForm.name.trim(),
+        subUrl: categoryForm.subUrl.trim() || `${catalogConfig.catalogUrl}${newId}/`,
+        projectCount: Number(categoryForm.projectCount) || 0,
+        keySkills: skills,
+        description: categoryForm.description.trim(),
+        active: categoryForm.active,
+      };
+      setCatalogConfig((prev) => ({
+        ...prev,
+        categories: [...prev.categories, newCat],
+      }));
+    }
+
+    setShowCategoryForm(false);
+    setEditingCategoryId(null);
+    setCategoryForm({
+      name: '',
+      subUrl: '',
+      projectCount: 0,
+      keySkillsText: '',
+      description: '',
+      active: true,
+    });
   };
 
   // Sync Action
@@ -576,25 +718,293 @@ export const AdminKnowledgePanel: React.FC<AdminKnowledgePanelProps> = ({
                 </div>
               )}
 
-              {/* TAB 2: Assistant Direction */}
+              {/* TAB 2: Assistant Direction & Catalog Config */}
               {activeTab === 'direction' && (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-2xl bg-white border border-purple-150 text-xs text-slate-700 leading-relaxed flex items-start gap-3 shadow-xs">
-                    <Info className="w-5 h-5 text-purple-700 shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-bold text-slate-900 block mb-1">
-                        تنظیم پویای جهت‌دهی و ماموریت مشاور هوشمند:
+                <div className="space-y-6">
+                  {/* Top explanation */}
+                  <div className="p-4 rounded-2xl bg-white border border-purple-150 text-xs text-slate-700 leading-relaxed flex items-start justify-between gap-3 shadow-xs">
+                    <div className="flex items-start gap-3">
+                      <Info className="w-5 h-5 text-purple-700 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-bold text-slate-900 block mb-1">
+                          تنظیم پویای جهت‌دهی و کاتالوگ پروژه‌ها (مرجع: {catalogConfig.catalogUrl}):
+                        </span>
+                        تنها پروژه‌های موجود در این لینک و حوزه‌های ۱۱گانه آن به عنوان پروژه‌های قابل اخذ به متقاضیان پیشنهاد می‌شوند. سایر صفحات (درباره ما، تماس، تیم‌ها و ...) صرفاً برای اطلاعات سازمانی (آدرس، سوابق تیم‌ها و تسهیلات) استفاده می‌گردند.
+                      </div>
+                    </div>
+
+                    <div className="hidden sm:flex items-center gap-2 shrink-0">
+                      <span className="px-2.5 py-1 rounded-xl bg-purple-50 text-purple-800 border border-purple-200 text-[11px] font-bold">
+                        {catalogConfig.categories.filter((c) => c.active).length} حوزه فعال
                       </span>
-                      متن زیر خط‌مشی و اولویت‌های گفتگوی مشاور با متقاضیان را تعیین می‌کند. هر تغییری در این بخش ذخیره شود، بلافاصله و بدون نیاز به بیلد مجدد برنامه، روی تمامی درخواست‌ها و چت‌های جدید اعمال می‌گردد.
                     </div>
                   </div>
 
+                  {/* Section 1: Catalog URL & Rules */}
+                  <div className="p-4 rounded-2xl bg-white border border-purple-150 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                        <Globe className="w-4 h-4 text-purple-700" />
+                        <span>۱. لینک اصلی کاتالوگ پروژه‌ها</span>
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="md:col-span-2">
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          آدرس ریشه کاتالوگ پروژه‌ها:
+                        </label>
+                        <input
+                          type="url"
+                          value={catalogConfig.catalogUrl}
+                          onChange={(e) =>
+                            setCatalogConfig({ ...catalogConfig, catalogUrl: e.target.value })
+                          }
+                          className="w-full bg-slate-50 border border-purple-200 rounded-xl px-3 py-2 text-xs font-mono dir-ltr text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          الگوی مسیر کاتالوگ:
+                        </label>
+                        <input
+                          type="text"
+                          value={catalogConfig.catalogUrlPatterns.join(', ')}
+                          onChange={(e) =>
+                            setCatalogConfig({
+                              ...catalogConfig,
+                              catalogUrlPatterns: e.target.value
+                                .split(',')
+                                .map((s) => s.trim())
+                                .filter(Boolean),
+                            })
+                          }
+                          className="w-full bg-slate-50 border border-purple-200 rounded-xl px-3 py-2 text-xs font-mono dir-ltr text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"
+                        />
+                      </div>
+                    </div>
+
+                    <label className="flex items-center gap-2 cursor-pointer p-2.5 rounded-xl bg-purple-50/60 border border-purple-150 text-xs text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={catalogConfig.enforceCatalogOnlyForProjects}
+                        onChange={(e) =>
+                          setCatalogConfig({
+                            ...catalogConfig,
+                            enforceCatalogOnlyForProjects: e.target.checked,
+                          })
+                        }
+                        className="rounded border-purple-300 text-purple-700 focus:ring-purple-200"
+                      />
+                      <span className="font-medium">
+                        الزام اکید: پروژه‌های قابل اخذ منحصراً از این لینک و حوزه‌های آن پیشنهاد شوند (صفحات متفرقه پروژه تلقی نشوند)
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Section 2: Categories Management */}
+                  <div className="p-4 rounded-2xl bg-white border border-purple-150 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+                      <span className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                        <Layers className="w-4 h-4 text-purple-700" />
+                        <span>۲. حوزه‌های فعال کاتالوگ ({catalogConfig.categories.length})</span>
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingCategoryId(null);
+                          setCategoryForm({
+                            name: '',
+                            subUrl: '',
+                            projectCount: 0,
+                            keySkillsText: '',
+                            description: '',
+                            active: true,
+                          });
+                          setShowCategoryForm(!showCategoryForm);
+                        }}
+                        className="px-3 py-1 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>افزودن حوزه</span>
+                      </button>
+                    </div>
+
+                    {/* Add / Edit Form */}
+                    {showCategoryForm && (
+                      <form
+                        onSubmit={handleSaveCategory}
+                        className="p-3.5 rounded-xl bg-purple-50 border border-purple-200 space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-purple-900">
+                            {editingCategoryId ? 'ویرایش حوزه کاتالوگ' : 'افزودن حوزه جدید به کاتالوگ'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowCategoryForm(false);
+                              setEditingCategoryId(null);
+                            }}
+                            className="text-xs text-slate-500 hover:text-slate-800 cursor-pointer"
+                          >
+                            انصراف
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">نام حوزه:</label>
+                            <input
+                              type="text"
+                              required
+                              value={categoryForm.name}
+                              onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                              placeholder="مثلاً: انرژی و محیط زیست"
+                              className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">آدرس مستقیم زیرشاخه:</label>
+                            <input
+                              type="url"
+                              required
+                              value={categoryForm.subUrl}
+                              onChange={(e) => setCategoryForm({ ...categoryForm, subUrl: e.target.value })}
+                              placeholder="https://yazdinnofaraz.ir/categories/energy/"
+                              className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1.5 text-xs font-mono dir-ltr text-slate-900 focus:outline-none focus:border-purple-600"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+                          <div>
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">تعداد پروژه:</label>
+                            <input
+                              type="number"
+                              min={0}
+                              value={categoryForm.projectCount}
+                              onChange={(e) => setCategoryForm({ ...categoryForm, projectCount: Number(e.target.value) })}
+                              className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-center text-slate-900 focus:outline-none focus:border-purple-600"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-3">
+                            <label className="block text-[11px] font-semibold text-slate-700 mb-1">مهارت‌های کلیدی:</label>
+                            <input
+                              type="text"
+                              value={categoryForm.keySkillsText}
+                              onChange={(e) => setCategoryForm({ ...categoryForm, keySkillsText: e.target.value })}
+                              placeholder="با کاما جدا کنید"
+                              className="w-full bg-white border border-purple-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
+                            <input
+                              type="checkbox"
+                              checked={categoryForm.active}
+                              onChange={(e) => setCategoryForm({ ...categoryForm, active: e.target.checked })}
+                              className="rounded border-purple-300 text-purple-700"
+                            />
+                            <span>حوزه فعال باشد</span>
+                          </label>
+
+                          <button
+                            type="submit"
+                            className="px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs cursor-pointer"
+                          >
+                            {editingCategoryId ? 'بروزرسانی' : 'افزودن'}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {/* Table of categories */}
+                    <div className="max-h-60 overflow-y-auto rounded-xl border border-purple-150">
+                      <table className="w-full text-right text-xs">
+                        <thead className="bg-[#f8f7fc] text-slate-600 sticky top-0 border-b border-purple-150">
+                          <tr>
+                            <th className="p-2.5 font-semibold">حوزه</th>
+                            <th className="p-2.5 font-semibold text-center">پروژه‌ها</th>
+                            <th className="p-2.5 font-semibold">لینک مستقیم</th>
+                            <th className="p-2.5 font-semibold text-center">وضعیت</th>
+                            <th className="p-2.5 font-semibold text-center">عملیات</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-purple-100">
+                          {catalogConfig.categories.map((c) => (
+                            <tr key={c.id} className="hover:bg-purple-50/50">
+                              <td className="p-2.5 font-bold text-slate-900">{c.name}</td>
+                              <td className="p-2.5 text-center font-extrabold text-purple-800">{c.projectCount}</td>
+                              <td className="p-2.5 font-mono text-[11px] text-slate-500 dir-ltr text-left truncate max-w-[160px]">
+                                {c.subUrl || catalogConfig.catalogUrl}
+                              </td>
+                              <td className="p-2.5 text-center">
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleCategoryActive(c.id)}
+                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold cursor-pointer ${
+                                    c.active
+                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      : 'bg-slate-100 text-slate-500'
+                                  }`}
+                                >
+                                  {c.active ? 'فعال' : 'غیرفعال'}
+                                </button>
+                              </td>
+                              <td className="p-2.5 text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleStartEditCategory(c)}
+                                    className="p-1 rounded text-slate-600 hover:text-purple-700 cursor-pointer"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteCategory(c.id)}
+                                    className="p-1 rounded text-rose-500 hover:text-rose-700 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Section 3: General pages guidance */}
+                  <div className="p-4 rounded-2xl bg-white border border-purple-150 space-y-2 shadow-xs">
+                    <span className="font-bold text-xs text-slate-900 block">
+                      ۳. دستورالعمل صفحات عمومی (آدرس مرکز، سوابق تیم‌ها، تسهیلات و ...):
+                    </span>
+                    <textarea
+                      rows={3}
+                      value={catalogConfig.generalPagesGuidance}
+                      onChange={(e) =>
+                        setCatalogConfig({ ...catalogConfig, generalPagesGuidance: e.target.value })
+                      }
+                      className="w-full bg-slate-50 border border-purple-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-purple-600 focus:bg-white"
+                    />
+                  </div>
+
+                  {/* Section 4: Direction Prompt */}
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-900">
-                      متن جهت‌دهی دستیار (Persian Guidance):
+                      ۴. متن جهت‌دهی دستیار (Persian Guidance & System Instruction):
                     </label>
                     <textarea
-                      rows={12}
+                      rows={8}
                       value={directionText}
                       onChange={(e) => setDirectionText(e.target.value)}
                       className="w-full bg-white border border-purple-200 rounded-2xl p-4 text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-100 leading-relaxed font-sans shadow-xs"
@@ -608,7 +1018,15 @@ export const AdminKnowledgePanel: React.FC<AdminKnowledgePanelProps> = ({
                     </div>
                   )}
 
-                  <div className="flex items-center justify-end gap-3 pt-2">
+                  <div className="flex items-center justify-between pt-2">
+                    <button
+                      type="button"
+                      onClick={handleResetDirection}
+                      className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+                    >
+                      بازگردانی پیش‌فرض
+                    </button>
+
                     <button
                       type="button"
                       disabled={isSavingDirection}
@@ -620,7 +1038,7 @@ export const AdminKnowledgePanel: React.FC<AdminKnowledgePanelProps> = ({
                       ) : (
                         <Check className="w-4 h-4" />
                       )}
-                      <span>ذخیره فوری جهت‌دهی دستیار</span>
+                      <span>ذخیره فوری جهت‌دهی و کاتالوگ</span>
                     </button>
                   </div>
                 </div>

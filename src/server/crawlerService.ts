@@ -8,6 +8,8 @@ import type {
   SyncStatusReport,
   FailedUrlRecord,
   AssistantDirectionConfig,
+  ProjectCatalogConfig,
+  ProjectCategoryStat,
 } from '../types/admin.ts';
 
 const DATA_DIR = path.resolve(process.cwd(), 'src/data');
@@ -19,57 +21,167 @@ const SYNC_STATUS_PATH = path.join(DATA_DIR, 'syncStatus.json');
 const TARGET_DOMAIN = 'yazdinnofaraz.ir';
 const TARGET_WEBSITE = 'https://yazdinnofaraz.ir/';
 
-export const DEFAULT_ASSISTANT_DIRECTION = `هدف اصلی دستیار این است که به کاربر کمک کند بر اساس تحصیلات، مهارت‌ها، تجربه، علایق، سابقه پروژه، شرایط و توانمندی‌هایش، از میان پروژه‌های موجود در مرکز رشد، پروژه‌های مناسب را شناسایی کند.
+export const DEFAULT_CATALOG_CONFIG: ProjectCatalogConfig = {
+  catalogUrl: 'https://yazdinnofaraz.ir/categories/',
+  catalogUrlPatterns: ['/categories/', '/categories/*'],
+  enforceCatalogOnlyForProjects: true,
+  generalPagesGuidance: `سایر صفحات وب‌سایت نوفرآز (شامل درباره ما، تماس با ما، تیم‌ها، تسهیلات و سوالات متداول) نشان‌دهنده اطلاعات سازمانی، معرفی مرکز، آدرس دقیق (یزد، دانشگاه یزد، شتاب‌دهنده و مرکز رشد فراز)، سوابق تیم‌های مستقر قبلی، فرآیند پذیرش، گرنت نمونه‌سازی (تا سقف ۷۰۰ میلیون تومان)، فضای اشتراکی و منتورینگ هستند. از این اطلاعات فقط برای پاسخ دادن به سوالات عمومی و راهنمایی کاربر استفاده شود و هرگز نباید به عنوان پروژه‌های جدید برای اخذ پیشنهاد شوند.`,
+  categories: [
+    {
+      id: 'cat_agriculture',
+      name: 'کشاورزی و امنیت غذایی',
+      projectCount: 151,
+      subUrl: 'https://yazdinnofaraz.ir/categories/agriculture/',
+      keySkills: ['مهندسی کشاورزی', 'هوشمندسازی گلخانه', 'بیوتکنولوژی', 'پایش خاک و بذر'],
+      description: 'پروژه‌های فناورانه در زنجیره ارزش غذا، گلخانه‌های هوشمند و کاهش ضایعات',
+      active: true,
+    },
+    {
+      id: 'cat_health',
+      name: 'سلامت و زیست‌فناوری',
+      projectCount: 82,
+      subUrl: 'https://yazdinnofaraz.ir/categories/health/',
+      keySkills: ['مهندسی پزشکی', 'بیوانفورماتیک', 'تجهیزات ارتوپدی', 'سامانه‌های سلامت دیجیتال'],
+      description: 'نوآوری در تجهیزات تشخیصی، سیستم‌های هوشمند پزشکی و داربست‌های زیستی',
+      active: true,
+    },
+    {
+      id: 'cat_water_energy',
+      name: 'آب، انرژی و محیط زیست',
+      projectCount: 60,
+      subUrl: 'https://yazdinnofaraz.ir/categories/water-energy/',
+      keySkills: ['انرژی خورشیدی', 'تصفیه پساب صنعتی', 'سیستم‌های BMS', 'کنتورهای هوشمند'],
+      description: 'بازچرخانی آب در مناطق کویری، ذخیره‌سازی انرژی و مدیریت هوشمند شبکه توزیع',
+      active: true,
+    },
+    {
+      id: 'cat_oil_gas',
+      name: 'نفت، گاز و پتروشیمی',
+      projectCount: 56,
+      subUrl: 'https://yazdinnofaraz.ir/categories/oil-gas/',
+      keySkills: ['مهندسی شیمی', 'کاتالیست‌ها', 'پایش خطوط لوله', 'ابزاردقیق'],
+      description: 'توسعه مواد شیمیایی تخصصی، پایش ضدخوردگی و کنترل هوشمند فرآیند',
+      active: true,
+    },
+    {
+      id: 'cat_ict',
+      name: 'فناوری اطلاعات و هوش مصنوعی',
+      projectCount: 51,
+      subUrl: 'https://yazdinnofaraz.ir/categories/ict/',
+      keySkills: ['اینترنت اشیاء (IoT)', 'بینایی ماشین', 'توسعه وب و موبایل', 'پردازش داده'],
+      description: 'پلتفرم‌های داده، سخت‌افزارهای امبدد، هوش مصنوعی صنعتی و سامانه‌های مانیتورینگ',
+      active: true,
+    },
+    {
+      id: 'cat_transport',
+      name: 'حمل و نقل و لجستیک هوشمند',
+      projectCount: 44,
+      subUrl: 'https://yazdinnofaraz.ir/categories/transportation/',
+      keySkills: ['مکانیک خودرو', 'ناوبری و ردیابی', 'سامانه‌های تلمتیکس', 'لجستیک هوشمند'],
+      description: 'بهینه‌سازی ناوگان حمل‌ونقل، سنسورهای پایش بار و وسایل نقلیه الکتریکی',
+      active: true,
+    },
+    {
+      id: 'cat_housing',
+      name: 'اسکان، ساختمان و شهر هوشمند',
+      projectCount: 22,
+      subUrl: 'https://yazdinnofaraz.ir/categories/housing/',
+      keySkills: ['مهندسی عمران', 'متریال نوین ساختمانی', 'اتوماسیون خانگی', 'سیستم‌های ضدزلزله'],
+      description: 'مصالح ساختمانی عایق، ساختمان‌های سبز و زیرساخت‌های هوشمند شهری',
+      active: true,
+    },
+    {
+      id: 'cat_mining',
+      name: 'معدن و صنایع معدنی',
+      projectCount: 17,
+      subUrl: 'https://yazdinnofaraz.ir/categories/mining/',
+      keySkills: ['متالورژی', 'فرآوری مواد معدنی', 'اکتشاف ژئوفیزیک', 'ماشین‌آلات سنگین'],
+      description: 'بهینه‌سازی خطوط خردایش و تغلیظ مواد معدنی یزد، استحصال عناصر نادر و ایمنی معدن',
+      active: true,
+    },
+    {
+      id: 'cat_environment',
+      name: 'محیط زیست و پسماند',
+      projectCount: 10,
+      subUrl: 'https://yazdinnofaraz.ir/categories/environment/',
+      keySkills: ['بازیافت صنعتی', 'مدیریت پسماند', 'کنترل گردوغبار', 'تصفیه هوا'],
+      description: 'پایش ریزگردها، مدیریت پایدار پسماندهای ویژه صنعتی و هوازی',
+      active: true,
+    },
+    {
+      id: 'cat_appliances',
+      name: 'لوازم خانگی هوشمند',
+      projectCount: 3,
+      subUrl: 'https://yazdinnofaraz.ir/categories/appliances/',
+      keySkills: ['طراحی صنعتی', 'برد الکترونیکی', 'کاهش مصرف انرژی', 'فرمان صوتی'],
+      description: 'بومی‌سازی قطعات کلیدی، اینورترها و اتصال ابری لوازم خانگی',
+      active: true,
+    },
+    {
+      id: 'cat_crisis',
+      name: 'مدیریت بحران و ایمنی',
+      projectCount: 2,
+      subUrl: 'https://yazdinnofaraz.ir/categories/crisis-management/',
+      keySkills: ['سنسورهای هشدار سریع', 'امداد و نجات', 'پهپادهای شناسایی'],
+      description: 'سامانه‌های اعلام خطر زودهنگام سیل و حوادث صنعتی و زیرساخت‌های پدافندی',
+      active: true,
+    },
+  ],
+};
 
-در ابتدای گفتگو اطلاعات لازم درباره کاربر را به‌صورت تدریجی جمع‌آوری کن و همه پرسش‌ها را یکجا نپرس.
+export const DEFAULT_ASSISTANT_DIRECTION = `هدف اصلی دستیار این است که به کاربر کمک کند بر اساس تحصیلات، مهارت‌ها، تجربه، علایق، سابقه پروژه و توانمندی‌هایش، مناسب‌ترین «پروژه‌ها و فراخوان‌های قابل اخذ» را از مرکز رشد فراز دانشگاه یزد شناسایی کند.
 
-پس از شناخت کافی از کاربر، پروژه‌های مرتبط را از دانش رسمی سایت پیدا کن و دلیل تناسب آنها را توضیح بده.
+=== تفکیک حیاتی منابع دانش ===
+۱. پروژه‌های قابل اخذ:
+   - پروژه‌های فعال فقط و فقط باید از آدرس اصلی https://yazdinnofaraz.ir/categories/ و حوزه‌های ۱۱گانه فراخوان مستخرج از آن پیشنهاد شوند.
+   - هرگز از برگه‌های عمومی سایت، پروژه اختراع یا به عنوان پروژه قابل اخذ پیشنهاد ندهید.
 
-در صورت امکان درباره مسیر اولیه انجام پروژه، مهارت‌های موردنیاز، شکاف مهارتی، نیاز به تیم، نمونه‌های مشابه، مشتری، بازار و ظرفیت تجاری‌سازی نیز توضیح بده.
+۲. دانش عمومی و اطلاعات مرکز رشد:
+   - سایر صفحات سایت (تماس با ما، درباره ما، تیم‌ها، تسهیلات و سوالات متداول) برای پاسخ به سوالات اداری و عمومی کاربر است.
+   - آدرس مرکز (یزد، دانشگاه یزد، شتاب‌دهنده و مرکز نوآوری فراز)، شماره‌های تماس، تیم‌های مستقر قبلی، سقف حمایت‌های مالی و تسهیلات استقرار را با دقت از این صفحات تشریح کن.
 
-اگر اطلاعات لازم در سایت وجود ندارد، آن را حدس نزن و صریحاً کمبود اطلاعات را اعلام کن.
-
-هدف نهایی گفتگو کمک به کاربر برای رسیدن به پروژه‌های واقعی و قابل‌بررسی مرکز رشد است.`.trim();
+۳. نحوه پاسخ‌دهی و تعامل:
+   - اطلاعات کاربر را تدریجی و تعاملی بپرس و برای پیشنهاد پروژه، دلیل انطباق مهارتی و گام بعدی را توضیح بده.`.trim();
 
 // Initial default domains configuration
 export const DEFAULT_DOMAINS: ProjectDomainConfig[] = [
   {
+    id: 'domain_categories',
+    name: 'کاتالوگ و فراخوان‌های فعال پروژه‌ها',
+    mainUrl: 'https://yazdinnofaraz.ir/categories/',
+    priority: 1,
+    active: true,
+    guidanceText: 'منبع انحصاری و مرجع اصلی پروژه‌های قابل اخذ در ۱۱ حوزه صنعتی (کشاورزی، سلامت، آب و انرژی، نفت و گاز، فناوری اطلاعات و ...).',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
     id: 'domain_energy',
     name: 'انرژی و بهینه‌سازی',
     mainUrl: 'https://yazdinnofaraz.ir/enrgy/',
-    priority: 1,
+    priority: 2,
     active: true,
-    guidanceText: 'در این حوزه روی پروژه‌های پایش هوشمند مصرف برق، اینترنت اشیاء صنعتی، مانیتورینگ خطوط انتقال و سیستم‌های مدیریت باتری (BMS) تمرکز کن.',
+    guidanceText: 'پروژه‌های پایش هوشمند مصرف برق، اینترنت اشیاء صنعتی، مانیتورینگ خطوط انتقال و سیستم‌های مدیریت باتری (BMS).',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
     id: 'domain_iot_teams',
-    name: 'تجهیزات هوشمند و تیم‌های نوپا',
+    name: 'تیم‌ها و سوابق استقرار',
     mainUrl: 'https://yazdinnofaraz.ir/teams/',
-    priority: 2,
-    active: true,
-    guidanceText: 'روی تیم‌های فعال در توسعه سخت‌افزار، سیستم‌های نهفته، روبات زیرسطحی ROV و فرصت‌های جذب هم‌تیمی تأکید کن.',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'domain_categories',
-    name: 'فراخوان‌های صنعتی و فناوری',
-    mainUrl: 'https://yazdinnofaraz.ir/categories/',
     priority: 3,
     active: true,
-    guidanceText: 'فراخوان‌های باز در بخش‌های کشاورزی، امنیت غذایی، سلامت، نفت و گاز، و معدن را برای تیم‌ها تشریح کن.',
+    guidanceText: 'اطلاعات تیم‌های مستقر، روبات زیرسطحی ROV و سوابق پروژه‌های انجام‌شده.',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
     id: 'domain_growth_facilities',
-    name: 'مراحل پذیرش و تسهیلات مرکز رشد',
+    name: 'تسهیلات و پذیرش مرکز رشد',
     mainUrl: 'https://yazdinnofaraz.ir/facility/',
     priority: 4,
     active: true,
-    guidanceText: 'خدمات استقرار در دانشگاه یزد، فضای کار اشتراکی، گرنت نمونه‌سازی و فرآیند اخذ گرید دانش‌بنیان را تبیین کن.',
+    guidanceText: 'خدمات استقرار در دانشگاه یزد، گرنت نمونه‌سازی تا ۷۰۰ میلیون تومان و فضای اشتراکی.',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
@@ -97,7 +209,11 @@ export function loadAssistantDirection(): AssistantDirectionConfig {
   try {
     if (fs.existsSync(ASSISTANT_DIRECTION_PATH)) {
       const raw = fs.readFileSync(ASSISTANT_DIRECTION_PATH, 'utf-8');
-      cachedAssistantDirection = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (!parsed.catalogConfig) {
+        parsed.catalogConfig = DEFAULT_CATALOG_CONFIG;
+      }
+      cachedAssistantDirection = parsed;
       return cachedAssistantDirection!;
     }
   } catch (err) {
@@ -106,6 +222,7 @@ export function loadAssistantDirection(): AssistantDirectionConfig {
 
   const initial: AssistantDirectionConfig = {
     directionText: DEFAULT_ASSISTANT_DIRECTION,
+    catalogConfig: DEFAULT_CATALOG_CONFIG,
     updatedAt: new Date().toISOString(),
   };
   saveAssistantDirection(initial);
@@ -114,6 +231,9 @@ export function loadAssistantDirection(): AssistantDirectionConfig {
 
 export function saveAssistantDirection(cfg: AssistantDirectionConfig): void {
   ensureDataDir();
+  if (!cfg.catalogConfig) {
+    cfg.catalogConfig = DEFAULT_CATALOG_CONFIG;
+  }
   fs.writeFileSync(ASSISTANT_DIRECTION_PATH, JSON.stringify(cfg, null, 2), 'utf-8');
   cachedAssistantDirection = cfg;
 }
@@ -289,56 +409,66 @@ export function extractInternalLinks(html: string): string[] {
 }
 
 /**
- * Identifies if a page is a project page, domain page, or general page
+ * Identifies if a page is an actionable project, institutional info, domain page, or general page
  */
 export function detectPageType(
   url: string,
   title: string,
   content: string,
-  isMainDomainUrl: boolean
-): 'project_domain' | 'project' | 'general' {
+  isMainDomainUrl: boolean,
+  catalogConfig?: ProjectCatalogConfig
+): 'actionable_project' | 'institutional_info' | 'project_domain' | 'project' | 'general' {
   if (isMainDomainUrl) return 'project_domain';
 
-  const indicators = [
-    'پروژه',
-    'محصول',
-    'تیم',
-    'ایده',
-    'فناور',
-    'طرح',
-    'سامانه',
-    'دستگاه',
-    'ربات',
-    'اینترنت اشیاء',
-    'iot',
-    'شتابدهی',
-    'شغل',
-    'هم‌تیمی',
-    'فرصت',
-    'فراخوان',
-    'چالش',
-    'نیازمندی',
-    'bms',
-    'rov',
-    'انرژی',
-  ];
-
-  const lowerTitle = title.toLowerCase();
   const lowerUrl = url.toLowerCase();
-  const lowerContent = content.slice(0, 1000).toLowerCase();
+  const lowerTitle = title.toLowerCase();
 
-  for (const ind of indicators) {
-    if (lowerTitle.includes(ind) || lowerUrl.includes(ind)) {
-      return 'project';
-    }
+  // 1. Matches configured project catalog (default: https://yazdinnofaraz.ir/categories/)
+  const catalogUrl = catalogConfig?.catalogUrl || 'https://yazdinnofaraz.ir/categories/';
+  const patterns = catalogConfig?.catalogUrlPatterns || ['/categories/'];
+  const enforceOnlyCatalog = catalogConfig?.enforceCatalogOnlyForProjects ?? true;
+
+  // Check if URL matches the catalog URL, patterns, or any configured category subUrl
+  const matchesCatalogUrl =
+    lowerUrl.includes('categories') ||
+    patterns.some((pat) => lowerUrl.includes(pat.toLowerCase().replace(/^\/|\/$/g, ''))) ||
+    (catalogConfig?.categories || []).some(
+      (cat) => cat.subUrl && lowerUrl.includes(cat.subUrl.toLowerCase().replace(/^https?:\/\/[^/]+/, ''))
+    );
+
+  if (matchesCatalogUrl) {
+    return 'actionable_project';
   }
 
-  let matchCount = 0;
-  for (const ind of indicators) {
-    if (lowerContent.includes(ind)) matchCount++;
+  // 2. Institutional pages (about center, address, facilities, past teams, FAQ, mentors, contact, etc.)
+  if (
+    lowerUrl.includes('/about') ||
+    lowerUrl.includes('/contact') ||
+    lowerUrl.includes('/teams') ||
+    lowerUrl.includes('/facility') ||
+    lowerUrl.includes('/faq') ||
+    lowerUrl.includes('/mentor') ||
+    lowerTitle.includes('تماس') ||
+    lowerTitle.includes('درباره ما') ||
+    lowerTitle.includes('تسهیلات') ||
+    lowerTitle.includes('تیم') ||
+    lowerTitle.includes('پذیرش') ||
+    lowerTitle.includes('آدرس') ||
+    lowerTitle.includes('سوالات متداول')
+  ) {
+    return 'institutional_info';
   }
 
-  if (matchCount >= 2) return 'project';
+  // If strictly enforcing catalog, non-catalog pages are NOT actionable takeable projects
+  if (enforceOnlyCatalog) {
+    return 'institutional_info';
+  }
+
+  const indicators = ['پروژه', 'فراخوان', 'طرح', 'فناور'];
+  for (const ind of indicators) {
+    if (lowerTitle.includes(ind)) return 'project';
+  }
+
   return 'general';
 }
 
@@ -588,7 +718,14 @@ export async function synchronizeWebsiteKnowledge(
             changedCount++;
           }
 
-          const pageType = detectPageType(childUrl, title, cleanChildText, false);
+          const assistantCfg = loadAssistantDirection();
+          const pageType = detectPageType(
+            childUrl,
+            title,
+            cleanChildText,
+            false,
+            assistantCfg.catalogConfig
+          );
 
           discoveredPagesMap.set(childUrl, {
             id: `child_${computeContentHash(childUrl).slice(0, 10)}`,
@@ -627,7 +764,9 @@ export async function synchronizeWebsiteKnowledge(
   }
 
   const allIndexedPages = Array.from(discoveredPagesMap.values());
-  const projectPages = allIndexedPages.filter((p) => p.page_type === 'project');
+  const projectPages = allIndexedPages.filter(
+    (p) => p.page_type === 'actionable_project' || p.page_type === 'project'
+  );
 
   // Save updated knowledge base
   const updatedKb: WebsiteKnowledgeBase = {
@@ -691,6 +830,7 @@ export function searchKnowledgeBase(
     const contentLower = page.content.toLowerCase();
     const titleLower = page.page_title.toLowerCase();
     const domainLower = (page.domain || page.project_domain || '').toLowerCase();
+    const urlLower = page.source_url.toLowerCase();
 
     // Priority bonus 1: user is viewing this exact page URL
     if (currentPageUrl && (page.source_url === currentPageUrl || currentPageUrl.includes(page.slug))) {
@@ -712,8 +852,37 @@ export function searchKnowledgeBase(
       if (contentLower.includes(term)) score += 3;
     }
 
+    // Intent 1: Projects / Calls / Categories
+    if (urlLower.includes('categories')) {
+      score += 30;
+      if (/پروژه|فراخوان|حوزه|پیشنهاد|شروع|رشته|همکاری|کار/i.test(query)) {
+        score += 40;
+      }
+    }
+
+    // Intent 2: Address / Contact / Location
+    if (/آدرس|کجاست|تماس|تلفن|موقعیت|شماره|لوکیشن|دانشگاه/i.test(query)) {
+      if (urlLower.includes('contact') || urlLower.includes('about')) {
+        score += 80;
+      }
+    }
+
+    // Intent 3: Past teams / How many teams took projects
+    if (/تیم|چند تیم|سوابق|نمونه|پروژه گرفتن|شرکت|استقرار/i.test(query)) {
+      if (urlLower.includes('teams') || urlLower.includes('about')) {
+        score += 80;
+      }
+    }
+
+    // Intent 4: Funding / Facilities / Grant / Space
+    if (/تسهیلات|گرنت|بورسیه|پذیرش|میلیون|حمایت|فضای کار|وام/i.test(query)) {
+      if (urlLower.includes('facility') || urlLower.includes('about')) {
+        score += 80;
+      }
+    }
+
     // Projects receive higher weight for matching
-    if (page.page_type === 'project') score += 10;
+    if (page.page_type === 'actionable_project' || page.page_type === 'project') score += 12;
     if (page.page_type === 'project_domain') score += 6;
 
     return { page, score };
@@ -743,17 +912,27 @@ export function searchKnowledgeBase(
 }
 
 /**
- * Builds grounded context for Gemini dynamically
+ * Builds grounded context for Gemini dynamically, cleanly separating
+ * Actionable Projects (from categories) vs General Center Knowledge (address, teams, etc.)
  */
 export function buildGroundingContext(
   retrievedPages: IndexedPage[],
   currentPageUrl?: string,
-  domainGuidanceList: string[] = []
+  domainGuidanceList: string[] = [],
+  catalogConfig?: ProjectCatalogConfig
 ): string {
-  let text = `=== پایگاه دانش اختصاصی مرکز رشد و نوآوری نوفرآز (https://yazdinnofaraz.ir/) ===\n`;
+  const catalogUrl = catalogConfig?.catalogUrl || 'https://yazdinnofaraz.ir/categories/';
+  const generalGuidance = catalogConfig?.generalPagesGuidance || '';
+
+  let text = `=== پایگاه دانش تفکیک‌شده مرکز رشد و نوآوری نوفرآز (https://yazdinnofaraz.ir/) ===\n\n`;
 
   if (currentPageUrl) {
-    text += `[آدرس صفحه جاری کاربر (CURRENT_PAGE_URL): ${currentPageUrl}]\n\n`;
+    text += `[آدرس صفحه جاری کاربر در وب‌سایت: ${currentPageUrl}]\n\n`;
+  }
+
+  text += `[منبع رسمی کاتالوگ پروژه‌ها و فراخوان‌های قابل اخذ: ${catalogUrl}]\n`;
+  if (generalGuidance) {
+    text += `[دستورالعمل نحوه استفاده از صفحات عمومی مرکز]:\n${generalGuidance}\n\n`;
   }
 
   if (domainGuidanceList.length > 0) {
@@ -761,9 +940,51 @@ export function buildGroundingContext(
     text += domainGuidanceList.join('\n') + '\n\n';
   }
 
-  for (const page of retrievedPages) {
-    text += `--- صفحه: ${page.page_title} (${page.source_url}) ---\n`;
-    text += `نوع برگه: ${page.page_type} | حوزه: ${page.domain || page.project_domain}\n`;
+  // Separate actionable project pages vs institutional knowledge pages
+  const actionablePages = retrievedPages.filter(
+    (p) =>
+      p.page_type === 'actionable_project' ||
+      p.page_type === 'project' ||
+      p.page_type === 'project_list' ||
+      p.source_url.includes('categories')
+  );
+  const generalPages = retrievedPages.filter((p) => !actionablePages.includes(p));
+
+  text += `=================================================================\n`;
+  text += `بخش ۱: کاتالوگ پروژه‌ها و فراخوان‌های قابل اخذ (منبع: ${catalogUrl})\n`;
+  text += `(قانون الزامی: فقط و فقط پروژه‌های معرفی‌شده در این بخش را به عنوان پروژه قابل اخذ پیشنهاد دهید)\n`;
+  text += `=================================================================\n\n`;
+
+  if (catalogConfig?.categories && catalogConfig.categories.length > 0) {
+    text += `--- حوزه‌های فعال فراخوان و آمار پروژه‌ها در ${catalogUrl} ---\n`;
+    for (const cat of catalogConfig.categories.filter((c) => c.active)) {
+      text += `- **${cat.name}**: ${cat.projectCount} پروژه فعال | لینک: ${cat.subUrl || catalogUrl}\n`;
+      if (cat.keySkills && cat.keySkills.length > 0) {
+        text += `  مهارت‌های کلیدی: ${cat.keySkills.join('، ')}\n`;
+      }
+      if (cat.description) {
+        text += `  توضیحات: ${cat.description}\n`;
+      }
+    }
+    text += `\n`;
+  }
+
+  for (const page of actionablePages) {
+    text += `--- برگه فراخوان/پروژه: ${page.page_title} (${page.source_url}) ---\n`;
+    text += `محتوا:\n${page.content}\n\n`;
+  }
+
+  text += `=================================================================\n`;
+  text += `بخش ۲: اطلاعات عمومی و سازمانی مرکز رشد (آدرس، تیم‌های گذشته، تسهیلات و قوانین)\n`;
+  text += `(قانون: این بخش را برای پاسخ به سوالات اطلاعاتی کاربر مانند آدرس مرکز، تعداد تیم‌ها، شرایط پذیرش و تسهیلات استفاده کنید)\n`;
+  text += `--- شناسنامه رسمی و اطلاعات هویتی مرکز نوفرآز ---\n`;
+  text += `- آدرس دقیق: یزد، دانشگاه یزد، شتاب‌دهنده و مرکز نوآوری و رشد فراز (باشگاه نوآوری شهید علم‌الهدی)\n`;
+  text += `- تلفن تماس و ارتباط: ۰۹۹۱۳۲۳۶۶۳۴ | وب‌سایت: https://yazdinnofaraz.ir/\n`;
+  text += `- سوابق تیم‌ها و پروژه‌های گرفته‌شده: بیش از ۴ سال سابقه استقرار تیم‌های تخصصی و دانشجویی دانشگاه یزد در حوزه‌های رباتیک زیرسطحی ROV، انرژی و مانیتورینگ هوشمند برق، کشاورزی هوشمند و نرم‌افزار\n`;
+  text += `- تسهیلات و حمایت‌ها: فضای کار اشتراکی، مشاوره و منتورینگ، دسترسی به شبکه صنعتی و گرنت نمونه‌سازی تا سقف ۷۰۰ میلیون تومان\n\n`;
+
+  for (const page of generalPages) {
+    text += `--- برگه اطلاعات مرکز: ${page.page_title} (${page.source_url}) ---\n`;
     text += `محتوا:\n${page.content}\n\n`;
   }
 

@@ -15,9 +15,14 @@ import {
   Lock,
   LogOut,
   AlertCircle,
+  AlertTriangle,
   HelpCircle,
   ArrowUpLeft,
   Database,
+  Maximize2,
+  Minimize2,
+  RefreshCw,
+  Wifi,
 } from 'lucide-react';
 import { ChatMessage, ChatSession } from '../types/chat.ts';
 import { ProjectRecommendationCard, CandidateProfile } from '../types/project.ts';
@@ -83,6 +88,132 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
   const [isResumeModalOpen, setIsResumeModalOpen] = useState<boolean>(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  // User Dynamic Resizing states (Width on desktop, Height on mobile)
+  const [desktopWidth, setDesktopWidth] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('yazd_assistant_desktop_width');
+      if (saved) return Math.min(Math.max(Number(saved), 380), 960);
+    }
+    return 440;
+  });
+
+  const [mobileHeight, setMobileHeight] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('yazd_assistant_mobile_height');
+      if (saved) return Math.min(Math.max(Number(saved), 50), 100);
+    }
+    return 85;
+  });
+
+  const [isMaximized, setIsMaximized] = useState<boolean>(false);
+  const [isResizingDesktop, setIsResizingDesktop] = useState<boolean>(false);
+  const [isResizingMobile, setIsResizingMobile] = useState<boolean>(false);
+
+  // Health / VPN Connectivity Check states (< 5s check)
+  const [vpnStatus, setVpnStatus] = useState<'idle' | 'checking' | 'fast' | 'vpn_recommended'>('idle');
+  const [vpnLatency, setVpnLatency] = useState<number | null>(null);
+  const [vpnDismissed, setVpnDismissed] = useState<boolean>(false);
+
+  const checkVpnHealth = async () => {
+    setVpnStatus('checking');
+    setVpnDismissed(false);
+    const startTime = Date.now();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5000);
+
+    try {
+      const res = await fetch('/api/health', { signal: controller.signal });
+      clearTimeout(timer);
+      const latency = Date.now() - startTime;
+      if (res.ok && latency <= 5000) {
+        setVpnStatus('fast');
+        setVpnLatency(latency);
+      } else {
+        setVpnStatus('vpn_recommended');
+        setVpnLatency(latency);
+      }
+    } catch (_) {
+      clearTimeout(timer);
+      setVpnStatus('vpn_recommended');
+      setVpnLatency(null);
+    }
+  };
+
+  // Run VPN check automatically when the assistant opens
+  useEffect(() => {
+    if (isOpen) {
+      checkVpnHealth();
+    }
+  }, [isOpen]);
+
+  // Handle desktop resize (dragging right edge of the left-docked sidebar)
+  useEffect(() => {
+    if (!isResizingDesktop) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const newWidth = Math.min(Math.max(e.clientX, 380), Math.min(window.innerWidth - 30, 1050));
+      setDesktopWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingDesktop(false);
+      localStorage.setItem('yazd_assistant_desktop_width', String(desktopWidth));
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizingDesktop, desktopWidth]);
+
+  // Handle mobile resize (dragging top grab bar of the bottom sheet)
+  useEffect(() => {
+    if (!isResizingMobile) return;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!e.touches[0]) return;
+      const clientY = e.touches[0].clientY;
+      const vh = Math.round(((window.innerHeight - clientY) / window.innerHeight) * 100);
+      const clamped = Math.min(Math.max(vh, 45), 100);
+      setMobileHeight(clamped);
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const vh = Math.round(((window.innerHeight - e.clientY) / window.innerHeight) * 100);
+      const clamped = Math.min(Math.max(vh, 45), 100);
+      setMobileHeight(clamped);
+    };
+
+    const handleEnd = () => {
+      setIsResizingMobile(false);
+      localStorage.setItem('yazd_assistant_mobile_height', String(mobileHeight));
+    };
+
+    window.addEventListener('touchmove', handleTouchMove);
+    window.addEventListener('touchend', handleEnd);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleEnd);
+    return () => {
+      window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleEnd);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleEnd);
+    };
+  }, [isResizingMobile, mobileHeight]);
+
+  const toggleMaximize = () => {
+    setIsMaximized(!isMaximized);
+    if (!isMaximized) {
+      setDesktopWidth(Math.min(window.innerWidth - 40, 840));
+      setMobileHeight(100);
+    } else {
+      setDesktopWidth(440);
+      setMobileHeight(85);
+    }
+  };
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -143,22 +274,29 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
 
   return (
     <>
-      {/* Floating Toggle Launcher Button */}
+      {/* Floating Toggle Launcher Button on Bottom-Left with Cloud Speech Bubble */}
       {!isOpen && (
-        <button
-          onClick={onToggle}
-          type="button"
-          className="fixed bottom-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-full bg-gradient-to-r from-purple-700 via-violet-700 to-indigo-700 hover:from-purple-800 hover:to-violet-800 text-white font-bold text-xs shadow-2xl shadow-purple-700/30 transition-all hover:scale-105 active:scale-95 cursor-pointer border border-purple-400/30 group"
-          title="باز کردن مشاور هوشمند انتخاب پروژه"
-        >
-          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white shrink-0 group-hover:rotate-12 transition-transform">
-            <Sparkles className="w-4 h-4" />
+        <div className="fixed bottom-5 left-5 z-50 flex items-center gap-2.5 dir-rtl group select-none">
+          {/* Cloud Speech Bubble (ابری) */}
+          <div
+            onClick={onToggle}
+            className="cursor-pointer bg-white text-slate-800 text-xs font-bold px-3.5 py-2.5 rounded-2xl shadow-xl shadow-purple-900/10 border border-purple-200/90 flex items-center gap-2 hover:bg-purple-50 transition-all hover:scale-105 active:scale-95 animate-pulse"
+            title="کلیک کنید تا دستیار باز شود"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-purple-700 shrink-0" />
+            <span className="whitespace-nowrap">از هوش مصنوعی برای انتخاب پروژه کمک بگیرید</span>
           </div>
-          <div className="text-right">
-            <div className="text-[10px] text-purple-200 font-medium">دانشگاه یزد</div>
-            <div className="text-xs font-extrabold text-white">مشاور هوشمند انتخاب پروژه</div>
-          </div>
-        </button>
+
+          {/* Small Circular Launcher Button (دایره کوچک سمت چپ) */}
+          <button
+            onClick={onToggle}
+            type="button"
+            className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-700 via-violet-700 to-indigo-700 hover:from-purple-800 hover:to-violet-800 text-white shadow-2xl shadow-purple-700/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer border-2 border-white shrink-0"
+            title="مشاور هوشمند انتخاب پروژه"
+          >
+            <Sparkles className="w-5 h-5 text-white animate-spin-slow" />
+          </button>
+        </div>
       )}
 
       {/* Backdrop for Desktop/Mobile when open */}
@@ -169,18 +307,61 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
         />
       )}
 
-      {/* Main Slide-in Assistant Container */}
+      {/* Main Slide-in Assistant Container: Left Sidebar on Desktop & Bottom Sheet (داون‌بار) on Mobile */}
       {isOpen && (
         <div
           dir="rtl"
-          className={`fixed z-50 flex flex-col bg-white border-purple-200 shadow-2xl transition-all font-sans text-slate-800 ${
+          style={{
+            width: isStandaloneRoute
+              ? '100%'
+              : typeof window !== 'undefined' && window.innerWidth >= 640
+              ? isMaximized
+                ? 'min(94vw, 1100px)'
+                : `${desktopWidth}px`
+              : '100%',
+            height: isStandaloneRoute
+              ? '100%'
+              : typeof window !== 'undefined' && window.innerWidth < 640
+              ? isMaximized
+                ? '100vh'
+                : `${mobileHeight}vh`
+              : '100vh',
+          }}
+          className={`fixed z-50 flex flex-col bg-white border-purple-200 shadow-2xl transition-[width,height] duration-200 font-sans text-slate-800 ${
             isStandaloneRoute
               ? 'inset-0 h-full w-full rounded-none border-none'
-              : 'bottom-0 right-0 h-[40vh] w-full rounded-t-3xl border-t sm:h-screen sm:w-[440px] sm:rounded-none sm:border-l sm:border-t-0'
+              : 'bottom-0 left-0 right-0 rounded-t-3xl border-t sm:inset-y-0 sm:left-0 sm:right-auto sm:h-screen sm:rounded-none sm:border-r sm:border-t-0'
           }`}
         >
+          {/* Mobile Drag Handle Bar on Top (کشیدن برای تغییر ارتفاع در گوشی) */}
+          {!isStandaloneRoute && (
+            <div
+              onTouchStart={() => setIsResizingMobile(true)}
+              onMouseDown={() => setIsResizingMobile(true)}
+              className="sm:hidden flex items-center justify-center py-2 cursor-ns-resize bg-purple-950/40 hover:bg-purple-950/60 active:bg-purple-900 transition-colors select-none shrink-0"
+              title="برای تغییر ارتفاع به بالا یا پایین بکشید"
+            >
+              <div className="w-12 h-1 rounded-full bg-white/60 shadow-xs" />
+            </div>
+          )}
+
+          {/* Desktop Drag Handle on Right Border (کشیدن برای تغییر عرض در دسکتاپ) */}
+          {!isStandaloneRoute && (
+            <div
+              onMouseDown={() => setIsResizingDesktop(true)}
+              className="hidden sm:block absolute top-0 bottom-0 -right-2 w-4 cursor-ew-resize group z-50 select-none"
+              title="برای تغییر عرض پنجره درگ کنید"
+            >
+              <div
+                className={`w-1 h-full mx-auto transition-colors ${
+                  isResizingDesktop ? 'bg-purple-600' : 'bg-transparent group-hover:bg-purple-400/80'
+                }`}
+              />
+            </div>
+          )}
+
           {/* Header Bar */}
-          <div className="px-4 py-3.5 border-b border-purple-900/20 bg-gradient-to-r from-purple-800 via-violet-800 to-indigo-900 text-white flex items-center justify-between gap-2 shrink-0 shadow-xs">
+          <div className="px-4 py-3 border-b border-purple-900/20 bg-gradient-to-r from-purple-800 via-violet-800 to-indigo-900 text-white flex items-center justify-between gap-2 shrink-0 shadow-xs">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white font-bold shrink-0 shadow-xs">
                 <Bot className="w-5 h-5 text-white" />
@@ -191,14 +372,45 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
                     مشاور انتخاب پروژه نوفرآز
                   </h2>
                 </div>
-                <p className="text-[10px] text-purple-200 truncate">
-                  {activeChat?.title || 'گفتگوی فعال'}
-                </p>
+                <div className="flex items-center gap-1.5 text-[10px] text-purple-200 truncate">
+                  <span className="truncate">{activeChat?.title || 'گفتگوی فعال'}</span>
+                  {vpnStatus === 'checking' && (
+                    <span className="text-amber-200 text-[9px] shrink-0 font-sans">
+                      (بررسی اتصال...)
+                    </span>
+                  )}
+                  {vpnStatus === 'fast' && vpnLatency !== null && (
+                    <span className="text-emerald-300 text-[9px] shrink-0 font-mono">
+                      • {vpnLatency}ms ✅
+                    </span>
+                  )}
+                  {vpnStatus === 'vpn_recommended' && (
+                    <span className="text-amber-300 text-[9px] shrink-0 font-bold">
+                      • نیاز به VPN ⚠️
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Header Action Buttons */}
             <div className="flex items-center gap-1 shrink-0">
+              {/* Maximize / Resize Toggle Button */}
+              {!isStandaloneRoute && (
+                <button
+                  type="button"
+                  onClick={toggleMaximize}
+                  className="p-1.5 rounded-lg text-purple-100 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                  title={isMaximized ? 'کاهش اندازه به حالت استاندارد' : 'بزرگ‌نمایی پنجره دستیار'}
+                >
+                  {isMaximized ? (
+                    <Minimize2 className="w-4 h-4 text-purple-100" />
+                  ) : (
+                    <Maximize2 className="w-4 h-4 text-purple-100" />
+                  )}
+                </button>
+              )}
+
               {/* New Chat */}
               <button
                 type="button"
@@ -249,7 +461,14 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
               {/* Close Button */}
               <button
                 type="button"
-                onClick={onToggle}
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
+                    try {
+                      window.parent.postMessage({ type: 'GROWTH_ASSISTANT_CLOSE' }, '*');
+                    } catch (_) {}
+                  }
+                  onToggle();
+                }}
                 className="p-1.5 rounded-lg text-purple-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer mr-1"
                 title="بستن دستیار"
               >
@@ -257,6 +476,47 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
               </button>
             </div>
           </div>
+
+          {/* VPN Status Banner (اگر در زیر ۵ ثانیه پاسخ دریافت نشود) */}
+          {vpnStatus === 'vpn_recommended' && !vpnDismissed && (
+            <div className="px-3.5 py-2.5 bg-amber-50 border-b border-amber-200 text-amber-900 text-xs flex items-start gap-2.5 shrink-0 shadow-xs">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1 text-[11px] leading-relaxed">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-amber-950">
+                    وضعیت اتصال به سرور هوش مصنوعی:
+                  </span>
+                  <button
+                    onClick={() => setVpnDismissed(true)}
+                    className="text-amber-700 hover:text-amber-950 text-xs cursor-pointer px-1 font-bold"
+                    title="بستن اعلان"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className="text-amber-800 mt-0.5">
+                  پاسخ سرور در کمتر از ۵ ثانیه دریافت نشد. برای برقراری ارتباط سریع و بدون وقفه، لطفاً <strong>از وی‌پی‌ان (VPN) استفاده نمایید</strong>.
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={checkVpnHealth}
+                    className="px-2.5 py-1 rounded-lg bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold text-[10px] flex items-center gap-1.5 cursor-pointer transition-colors"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>تست مجدد اتصال</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVpnDismissed(true)}
+                    className="px-2 py-1 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 text-[10px] cursor-pointer"
+                  >
+                    متوجه شدم
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Current Page Context Indicator Banner */}
           <div className="px-4 py-1.5 bg-purple-50/80 border-b border-purple-100 flex items-center justify-between text-[10px] text-slate-600 shrink-0">

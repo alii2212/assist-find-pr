@@ -31,8 +31,27 @@ export interface SyncStatusReport {
   lastMessage?: string;
 }
 
+export interface ProjectCategoryStat {
+  id: string;
+  name: string;
+  projectCount: number;
+  subUrl?: string;
+  keySkills?: string[];
+  description?: string;
+  active: boolean;
+}
+
+export interface ProjectCatalogConfig {
+  catalogUrl: string; // Default: 'https://yazdinnofaraz.ir/categories/'
+  catalogUrlPatterns: string[]; // Patterns like ['/categories/']
+  enforceCatalogOnlyForProjects: boolean; // Only recommend takeable projects from this source
+  generalPagesGuidance: string; // Instructions on using general info (about, contact, teams, facility, faq)
+  categories: ProjectCategoryStat[];
+}
+
 export interface AssistantDirectionConfig {
   directionText: string;
+  catalogConfig?: ProjectCatalogConfig;
   updatedAt: string;
   updatedBy?: string;
 }

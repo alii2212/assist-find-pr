@@ -37,7 +37,7 @@ export interface IndexedPage {
   slug: string;
   source_url: string;
   page_title: string;
-  page_type: 'project' | 'project_domain' | 'project_list' | 'general';
+  page_type: 'project' | 'project_domain' | 'project_list' | 'general' | 'actionable_project' | 'institutional_info';
   project_domain?: string;
   domain?: string;
   parent_domain_url?: string;

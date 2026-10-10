@@ -22,12 +22,19 @@ import {
   LogOut,
   ArrowRight,
   Sparkles,
+  Info,
+  Smartphone,
+  Monitor,
+  Eye,
+  Clock,
 } from 'lucide-react';
 import {
   ProjectDomainConfig,
   SyncStatusReport,
   SystemStatusReport,
   IndexedPageSummary,
+  ProjectCatalogConfig,
+  ProjectCategoryStat,
 } from '../types/admin.ts';
 import {
   getCurrentIdToken,
@@ -54,6 +61,30 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   // Dashboard Data
   const [domains, setDomains] = useState<ProjectDomainConfig[]>([]);
   const [directionText, setDirectionText] = useState<string>('');
+  const [catalogConfig, setCatalogConfig] = useState<ProjectCatalogConfig>({
+    catalogUrl: 'https://yazdinnofaraz.ir/categories/',
+    catalogUrlPatterns: ['/categories/', '/categories/*'],
+    enforceCatalogOnlyForProjects: true,
+    generalPagesGuidance: '',
+    categories: [],
+  });
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [showCategoryForm, setShowCategoryForm] = useState<boolean>(false);
+  const [categoryForm, setCategoryForm] = useState<{
+    name: string;
+    subUrl: string;
+    projectCount: number;
+    keySkillsText: string;
+    description: string;
+    active: boolean;
+  }>({
+    name: '',
+    subUrl: '',
+    projectCount: 0,
+    keySkillsText: '',
+    description: '',
+    active: true,
+  });
   const [syncStatus, setSyncStatus] = useState<SyncStatusReport | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatusReport | null>(null);
   const [totalPages, setTotalPages] = useState<number>(0);
@@ -131,7 +162,12 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
       if (res.ok) {
         const data = await res.json();
         setDomains(data.domains || []);
-        setDirectionText(data.assistantDirection?.directionText || '');
+        if (data.assistantDirection) {
+          setDirectionText(data.assistantDirection.directionText || '');
+          if (data.assistantDirection.catalogConfig) {
+            setCatalogConfig(data.assistantDirection.catalogConfig);
+          }
+        }
         setSyncStatus(data.syncStatus || null);
         setSystemStatus(data.systemStatus || null);
         setTotalPages(data.totalPages || 0);
@@ -250,7 +286,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
     }
   };
 
-  // Assistant Direction
+  // Assistant Direction & Catalog Actions
   const handleSaveDirection = async () => {
     setIsSavingDirection(true);
     setDirectionSuccessMsg(null);
@@ -263,10 +299,13 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ directionText }),
+        body: JSON.stringify({
+          directionText,
+          catalogConfig,
+        }),
       });
       if (res.ok) {
-        setDirectionSuccessMsg('جهت‌دهی دستیار ذخیره شد و در تمامی گفتگوهای جدید بدون نیاز به بیلد مجدد اعمال می‌شود.');
+        setDirectionSuccessMsg('جهت‌دهی دستیار و تنظیمات کاتالوگ با موفقیت ذخیره شد و بلافاصله در تمامی گفتگوهای جدید اعمال می‌گردد.');
         setTimeout(() => setDirectionSuccessMsg(null), 5000);
       } else {
         setActionError('خطا در ذخیره جهت‌دهی دستیار');
@@ -279,7 +318,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   };
 
   const handleResetDirection = async () => {
-    if (!window.confirm('آیا مایل به بازگردانی متن پیش‌فرض جهت‌دهی دستیار هستید؟')) return;
+    if (!window.confirm('آیا مایل به بازگردانی تنظیمات پیش‌فرض کاتالوگ و جهت‌دهی دستیار هستید؟')) return;
     try {
       const token = await getCurrentIdToken();
       const res = await fetch('/api/admin/assistant-direction/reset', {
@@ -289,12 +328,101 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
       if (res.ok) {
         const data = await res.json();
         setDirectionText(data.assistantDirection.directionText);
-        setDirectionSuccessMsg('متن پیش‌فرض جهت‌دهی با موفقیت بازگردانده شد.');
+        if (data.assistantDirection.catalogConfig) {
+          setCatalogConfig(data.assistantDirection.catalogConfig);
+        }
+        setDirectionSuccessMsg('تنظیمات پیش‌فرض کاتالوگ و جهت‌دهی با موفقیت بازگردانده شد.');
         setTimeout(() => setDirectionSuccessMsg(null), 4000);
       }
     } catch (err) {
       console.error(err);
     }
+  };
+
+  // Category Actions for Catalog Config
+  const handleToggleCategoryActive = (catId: string) => {
+    setCatalogConfig((prev) => ({
+      ...prev,
+      categories: prev.categories.map((c) =>
+        c.id === catId ? { ...c, active: !c.active } : c
+      ),
+    }));
+  };
+
+  const handleDeleteCategory = (catId: string) => {
+    if (!window.confirm('آیا از حذف این حوزه از کاتالوگ پروژه‌ها اطمینان دارید؟')) return;
+    setCatalogConfig((prev) => ({
+      ...prev,
+      categories: prev.categories.filter((c) => c.id !== catId),
+    }));
+  };
+
+  const handleStartEditCategory = (cat: ProjectCategoryStat) => {
+    setEditingCategoryId(cat.id);
+    setCategoryForm({
+      name: cat.name,
+      subUrl: cat.subUrl || '',
+      projectCount: cat.projectCount || 0,
+      keySkillsText: (cat.keySkills || []).join('، '),
+      description: cat.description || '',
+      active: cat.active,
+    });
+    setShowCategoryForm(true);
+  };
+
+  const handleSaveCategory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryForm.name.trim()) return;
+
+    const skills = categoryForm.keySkillsText
+      .split(/[,،]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (editingCategoryId) {
+      setCatalogConfig((prev) => ({
+        ...prev,
+        categories: prev.categories.map((c) =>
+          c.id === editingCategoryId
+            ? {
+                ...c,
+                name: categoryForm.name.trim(),
+                subUrl: categoryForm.subUrl.trim(),
+                projectCount: Number(categoryForm.projectCount) || 0,
+                keySkills: skills,
+                description: categoryForm.description.trim(),
+                active: categoryForm.active,
+              }
+            : c
+        ),
+      }));
+    } else {
+      const newId = 'cat_' + Date.now().toString(36);
+      const newCat: ProjectCategoryStat = {
+        id: newId,
+        name: categoryForm.name.trim(),
+        subUrl: categoryForm.subUrl.trim() || `${catalogConfig.catalogUrl}${newId}/`,
+        projectCount: Number(categoryForm.projectCount) || 0,
+        keySkills: skills,
+        description: categoryForm.description.trim(),
+        active: categoryForm.active,
+      };
+      setCatalogConfig((prev) => ({
+        ...prev,
+        categories: [...prev.categories, newCat],
+      }));
+    }
+
+    setShowCategoryForm(false);
+    setEditingCategoryId(null);
+    setCategoryForm({
+      name: '',
+      subUrl: '',
+      projectCount: 0,
+      keySkillsText: '',
+      description: '',
+      active: true,
+    });
   };
 
   // Sync Trigger
@@ -330,63 +458,295 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
     }
   };
 
-  // Host configuration for embedding
+  // Host and Widget configuration for embedding in WordPress & Elementor
   const sharedOrigin = 'https://ais-pre-jpusmsdrg4bi5d447purk4-558511060556.europe-west3.run.app';
   const currentOrigin = typeof window !== 'undefined' ? window.location.origin : sharedOrigin;
-  const [embedHostOption, setEmbedHostOption] = useState<'shared' | 'custom' | 'current'>('shared');
-  const [customHost, setCustomHost] = useState('');
 
-  const selectedOrigin =
-    embedHostOption === 'shared'
-      ? sharedOrigin
-      : embedHostOption === 'custom' && customHost.trim()
-      ? customHost.trim().replace(/\/$/, '')
-      : currentOrigin;
+  const [embedHostOption, setEmbedHostOption] = useState<'shared' | 'current' | 'custom'>('shared');
+  const [customHost, setCustomHost] = useState<string>('https://yazdinnofaraz.ir');
+  const [widgetUrlInput, setWidgetUrlInput] = useState<string>(`${sharedOrigin}/widget`);
+  const [isTestPreviewOpen, setIsTestPreviewOpen] = useState<boolean>(false);
 
-  const widgetUrl = `${selectedOrigin}/widget`;
+  const handleHostOptionSelect = (option: 'shared' | 'current' | 'custom') => {
+    setEmbedHostOption(option);
+    if (option === 'shared') {
+      setWidgetUrlInput(`${sharedOrigin}/widget`);
+    } else if (option === 'current') {
+      setWidgetUrlInput(`${currentOrigin}/widget`);
+    } else if (option === 'custom') {
+      const cleanCustom = customHost.trim().replace(/\/+$/, '') || 'https://yazdinnofaraz.ir';
+      setWidgetUrlInput(`${cleanCustom}/widget`);
+    }
+  };
 
-  const wordpressEmbedCode = `<!-- شروع ویجت مشاور هوشمند انتخاب پروژه مرکز رشد فراز -->
-<iframe
-  id="yazd-growth-ai-widget"
-  src="${widgetUrl}?parentUrl="
-  style="position: fixed; bottom: 20px; right: 20px; width: 70px; height: 70px; border: none; z-index: 999999; max-width: 100vw; transition: all 0.3s ease;"
-  allow="clipboard-write; identity-credentials-get"
-></iframe>
-<script>
-  (function() {
-    var iframe = document.getElementById('yazd-growth-ai-widget');
-    if (!iframe) return;
-    // ارسال آدرس صفحه فعلی وردپرس به عنوان بافت پروژه
-    iframe.src = iframe.src + encodeURIComponent(window.location.href);
+  const handleCustomHostChange = (val: string) => {
+    setCustomHost(val);
+    const clean = val.trim().replace(/\/+$/, '');
+    if (clean) {
+      setWidgetUrlInput(`${clean}/widget`);
+    }
+  };
 
-    window.addEventListener('message', function(e) {
-      if (e.data && e.data.type === 'GROWTH_ASSISTANT_RESIZE') {
-        if (e.data.isOpen) {
-          if (window.innerWidth < 640) {
-            iframe.style.width = '100vw';
-            iframe.style.height = '42vh';
-            iframe.style.bottom = '0px';
-            iframe.style.right = '0px';
-          } else {
-            iframe.style.width = '440px';
-            iframe.style.height = '100vh';
-            iframe.style.bottom = '0px';
-            iframe.style.right = '0px';
-          }
-        } else {
-          iframe.style.width = '70px';
-          iframe.style.height = '70px';
-          iframe.style.bottom = '20px';
-          iframe.style.right = '20px';
-        }
+  // Cron Job states & helpers to keep Render / cloud hosting server awake
+  const [copiedCron, setCopiedCron] = useState<boolean>(false);
+  const [healthTestStatus, setHealthTestStatus] = useState<'idle' | 'testing' | 'ok' | 'fail'>('idle');
+  const [healthTestLatency, setHealthTestLatency] = useState<number | null>(null);
+
+  const hostBaseUrl = widgetUrlInput.replace(/\/widget\/?$/, '') || sharedOrigin;
+  const cronCurlCommand = `*/10 * * * * curl -s -f ${hostBaseUrl}/health > /dev/null 2>&1`;
+  const cronWgetCommand = `*/10 * * * * wget -q -O - ${hostBaseUrl}/health > /dev/null 2>&1`;
+
+  const handleCopyCronCode = () => {
+    navigator.clipboard.writeText(cronCurlCommand);
+    setCopiedCron(true);
+    setTimeout(() => setCopiedCron(false), 2500);
+  };
+
+  const testServerHealth = async () => {
+    setHealthTestStatus('testing');
+    const start = Date.now();
+    try {
+      const res = await fetch('/api/health');
+      const latency = Date.now() - start;
+      if (res.ok) {
+        setHealthTestStatus('ok');
+        setHealthTestLatency(latency);
+      } else {
+        setHealthTestStatus('fail');
       }
+    } catch (_) {
+      setHealthTestStatus('fail');
+    }
+  };
+
+  // Dynamic Embed Code Generator matching user requirements:
+  // 1. Bottom-Left small circle button
+  // 2. Cloud-shaped speech bubble: "از هوش مصنوعی برای انتخاب پروژه کمک بگیرید"
+  // 3. Desktop: Left-side drawer (سایدبار سمت چپ)
+  // 4. Mobile: Bottom drawer (داون‌بار تمام‌عرض و راحت برای چت)
+  const generateWordPressEmbedCode = (url: string) => `<!-- شروع کد هوشمند دستیار انتخاب پروژه مرکز رشد فراز دانشگاه یزد -->
+<div id="yazd-growth-ai-root">
+  <!-- دکمه شناور دایره‌ای و ابری پیام در گوشه پایین سمت چپ -->
+  <div id="yazd-ai-launcher" style="position: fixed; bottom: 24px; left: 24px; z-index: 9999999; display: flex; align-items: center; gap: 10px; font-family: Tahoma, Vazirmatn, system-ui, sans-serif; direction: rtl;">
+    <!-- ابری پیام راهنما -->
+    <div id="yazd-ai-cloud" style="background: #ffffff; color: #1e1b4b; font-size: 13px; font-weight: 700; padding: 9px 16px; border-radius: 20px; box-shadow: 0 10px 25px -5px rgba(109, 40, 217, 0.25), 0 8px 10px -6px rgba(0,0,0,0.1); border: 1px solid #ddd6fe; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 8px; transition: all 0.25s ease; animation: yazdCloudFloat 3s ease-in-out infinite;">
+      <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #7c3aed; box-shadow: 0 0 8px #7c3aed;"></span>
+      <span>از هوش مصنوعی برای انتخاب پروژه کمک بگیرید</span>
+    </div>
+    <!-- دایره کوچک آیکون دستیار در سمت چپ -->
+    <button id="yazd-ai-btn" type="button" aria-label="مشاور هوشمند انتخاب پروژه" style="width: 54px; height: 54px; min-width: 54px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #4338ca 100%); border: 2px solid #ffffff; box-shadow: 0 10px 25px -3px rgba(109, 40, 217, 0.5), 0 4px 6px -4px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; color: #ffffff; transition: transform 0.2s ease, box-shadow 0.2s ease;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+        <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- لایه تیره پشت پنل -->
+  <div id="yazd-ai-overlay" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); z-index: 9999998; opacity: 0; transition: opacity 0.3s ease;"></div>
+
+  <!-- کانتینر چت: سایدبار چپ در کامپیوتر و داون‌بار در گوشی -->
+  <div id="yazd-ai-panel" style="display: none; position: fixed; z-index: 9999999; background: #ffffff; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden; transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;">
+    <!-- دستگیره کشیدن برای تغییر ارتفاع در موبایل -->
+    <div id="yazd-ai-drag-mobile" style="display: none; height: 16px; width: 100%; cursor: ns-resize; background: #581c87; align-items: center; justify-content: center; select-none;">
+      <div style="width: 42px; height: 4px; background: rgba(255,255,255,0.7); border-radius: 2px;"></div>
+    </div>
+
+    <!-- نوار کشیدن برای تغییر عرض در دسکتاپ -->
+    <div id="yazd-ai-drag-desktop" style="position: absolute; top: 0; bottom: 0; right: 0; width: 8px; cursor: ew-resize; background: transparent; z-index: 9999;" title="برای تغییر عرض سایدبار بکشید"></div>
+
+    <!-- نوار بالای پنل با دکمه‌های تغییر اندازه و بستن -->
+    <div id="yazd-ai-panel-header" style="height: 46px; background: linear-gradient(to right, #6d28d9, #4f46e5); display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #ffffff; font-family: Tahoma, Vazirmatn, system-ui, sans-serif; direction: rtl;">
+      <span style="font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 7px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        مشاور انتخاب پروژه نوفرآز دانشگاه یزد
+      </span>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <button id="yazd-ai-resize-btn" type="button" aria-label="تغییر اندازه" title="بزرگ‌نمایی / کوچک‌نمایی پنجره دستیار" style="background: rgba(255,255,255,0.2); border: none; color: #ffffff; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; transition: background 0.2s ease;">⛶</button>
+        <button id="yazd-ai-close-btn" type="button" aria-label="بستن پنجره" style="background: rgba(255,255,255,0.2); border: none; color: #ffffff; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; transition: background 0.2s ease;">✕</button>
+      </div>
+    </div>
+    <!-- آی‌فریم لود کننده مشاور هوشمند -->
+    <iframe id="yazd-ai-iframe" src="" style="width: 100%; height: calc(100% - 46px); border: none; display: block;" allow="clipboard-write; identity-credentials-get"></iframe>
+  </div>
+</div>
+
+<style>
+  @keyframes yazdCloudFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  #yazd-ai-btn:hover { transform: scale(1.08); box-shadow: 0 15px 30px -3px rgba(109, 40, 217, 0.6); }
+  #yazd-ai-cloud:hover { background: #f5f3ff; border-color: #c4b5fd; transform: translateY(-2px); }
+  #yazd-ai-close-btn:hover, #yazd-ai-resize-btn:hover { background: rgba(255,255,255,0.35); }
+
+  /* حالت کامپیوتر (دسکتاپ): سایدبار سمت چپ */
+  @media (min-width: 641px) {
+    #yazd-ai-panel {
+      top: 0; left: 0; bottom: 0; width: 440px; height: 100vh;
+      border-right: 1px solid #e2e8f0;
+      transform: translateX(-100%);
+    }
+    #yazd-ai-panel.yazd-open {
+      display: block !important;
+      transform: translateX(0);
+    }
+    #yazd-ai-drag-mobile { display: none !important; }
+    #yazd-ai-drag-desktop { display: block !important; }
+  }
+
+  /* حالت گوشی (موبایل): داون‌بار از پایین صفحه */
+  @media (max-width: 640px) {
+    #yazd-ai-panel {
+      bottom: 0; left: 0; right: 0; width: 100vw; height: 85vh;
+      border-top-left-radius: 24px; border-top-right-radius: 24px;
+      transform: translateY(100%);
+    }
+    #yazd-ai-panel.yazd-open {
+      display: block !important;
+      transform: translateY(0);
+    }
+    #yazd-ai-cloud {
+      font-size: 11px; padding: 7px 12px;
+    }
+    #yazd-ai-launcher {
+      bottom: 16px; left: 16px; gap: 8px;
+    }
+    #yazd-ai-drag-mobile { display: flex !important; }
+    #yazd-ai-drag-desktop { display: none !important; }
+  }
+</style>
+
+<script>
+(function() {
+  var targetUrl = "${url.trim()}";
+  var launcher = document.getElementById("yazd-ai-launcher");
+  var cloud = document.getElementById("yazd-ai-cloud");
+  var btn = document.getElementById("yazd-ai-btn");
+  var overlay = document.getElementById("yazd-ai-overlay");
+  var panel = document.getElementById("yazd-ai-panel");
+  var iframe = document.getElementById("yazd-ai-iframe");
+  var closeBtn = document.getElementById("yazd-ai-close-btn");
+  var resizeBtn = document.getElementById("yazd-ai-resize-btn");
+  var dragDesktop = document.getElementById("yazd-ai-drag-desktop");
+  var dragMobile = document.getElementById("yazd-ai-drag-mobile");
+  var isOpen = false;
+  var isMax = false;
+
+  function openAssistant() {
+    if (!iframe.src) {
+      var currentUrl = encodeURIComponent(window.location.href);
+      var sep = targetUrl.indexOf("?") === -1 ? "?" : "&";
+      iframe.src = targetUrl + sep + "parentUrl=" + currentUrl;
+    }
+    isOpen = true;
+    overlay.style.display = "block";
+    panel.style.display = "block";
+    launcher.style.display = "none";
+    setTimeout(function() {
+      panel.classList.add("yazd-open");
+      overlay.style.opacity = "1";
+    }, 15);
+  }
+
+  function closeAssistant() {
+    isOpen = false;
+    panel.classList.remove("yazd-open");
+    overlay.style.opacity = "0";
+    setTimeout(function() {
+      if (!isOpen) {
+        overlay.style.display = "none";
+        panel.style.display = "none";
+        launcher.style.display = "flex";
+      }
+    }, 320);
+  }
+
+  if (btn) btn.addEventListener("click", openAssistant);
+  if (cloud) cloud.addEventListener("click", openAssistant);
+  if (closeBtn) closeBtn.addEventListener("click", closeAssistant);
+  if (overlay) overlay.addEventListener("click", closeAssistant);
+
+  // Resize toggle button
+  if (resizeBtn) {
+    resizeBtn.addEventListener("click", function() {
+      isMax = !isMax;
+      var isMobile = window.innerWidth <= 640;
+      if (isMobile) {
+        panel.style.height = isMax ? "100vh" : "85vh";
+      } else {
+        panel.style.width = isMax ? "min(94vw, 860px)" : "440px";
+      }
+      resizeBtn.textContent = isMax ? "▫" : "⛶";
     });
-  })();
+  }
+
+  // Desktop drag width
+  if (dragDesktop) {
+    dragDesktop.addEventListener("mousedown", function(e) {
+      e.preventDefault();
+      function onMouseMove(ev) {
+        var w = Math.min(Math.max(ev.clientX, 360), window.innerWidth - 30);
+        panel.style.width = w + "px";
+      }
+      function onMouseUp() {
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onMouseUp);
+      }
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onMouseUp);
+    });
+  }
+
+  // Mobile drag height
+  if (dragMobile) {
+    function startMobileDrag(startY) {
+      function onMove(evY) {
+        var vh = Math.round(((window.innerHeight - evY) / window.innerHeight) * 100);
+        var clamped = Math.min(Math.max(vh, 45), 100);
+        panel.style.height = clamped + "vh";
+      }
+      function onTouchMove(ev) {
+        if (ev.touches && ev.touches[0]) onMove(ev.touches[0].clientY);
+      }
+      function onMouseMove(ev) { onMove(ev.clientY); }
+      function onEnd() {
+        window.removeEventListener("touchmove", onTouchMove);
+        window.removeEventListener("touchend", onEnd);
+        window.removeEventListener("mousemove", onMouseMove);
+        window.removeEventListener("mouseup", onEnd);
+      }
+      window.addEventListener("touchmove", onTouchMove);
+      window.addEventListener("touchend", onEnd);
+      window.addEventListener("mousemove", onMouseMove);
+      window.addEventListener("mouseup", onEnd);
+    }
+
+    dragMobile.addEventListener("touchstart", function(e) {
+      if (e.touches && e.touches[0]) startMobileDrag(e.touches[0].clientY);
+    });
+    dragMobile.addEventListener("mousedown", function(e) {
+      startMobileDrag(e.clientY);
+    });
+  }
+
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape" && isOpen) closeAssistant();
+  });
+
+  window.addEventListener("message", function(e) {
+    if (e.data && (e.data.type === "GROWTH_ASSISTANT_CLOSE" || e.data.type === "CLOSE_ASSISTANT_WIDGET")) {
+      closeAssistant();
+    }
+  });
+})();
 </script>
-<!-- پایان ویجت مشاور هوشمند -->`.trim();
+<!-- پایان کد هوشمند دستیار انتخاب پروژه -->`.trim();
+
+  const currentEmbedCode = generateWordPressEmbedCode(widgetUrlInput);
 
   const handleCopyEmbedCode = () => {
-    navigator.clipboard.writeText(wordpressEmbedCode);
+    navigator.clipboard.writeText(currentEmbedCode);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2500);
   };
@@ -1091,62 +1451,461 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
             </div>
           )}
 
-          {/* SECTION 4: ASSISTANT DIRECTION */}
+          {/* SECTION 4: ASSISTANT DIRECTION & PROJECT CATALOG CONFIGURATION */}
           {activeTab === 'direction' && (
-            <div className="space-y-4">
-              <div className="p-5 rounded-2xl bg-white border border-purple-150 text-xs text-slate-700 leading-relaxed flex items-start gap-3">
-                <Sliders className="w-5 h-5 text-purple-700 shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm mb-1">
-                    تنظیم پویای هدف و جهت‌دهی دستیار هوشمند:
-                  </h3>
-                  <p className="text-slate-500">
-                    متن زیر به عنوان دستورالعمل اصلی به مدل هوش مصنوعی ارسال می‌شود. هرگونه تغییر در این بخش، بلافاصله در پردازش مکالمات جدید ذخیره و اعمال می‌شود و هیچ نیازی به بیلد یا انتشار مجدد ندارد.
-                  </p>
+            <div className="space-y-6">
+              {/* Header Banner */}
+              <div className="p-5 rounded-2xl bg-white border border-purple-150 text-xs text-slate-700 leading-relaxed flex items-start justify-between gap-4 shadow-xs">
+                <div className="flex items-start gap-3">
+                  <Sliders className="w-5 h-5 text-purple-700 shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm mb-1 flex items-center gap-2">
+                      <span>جهت‌گیری دستیار و کاتالوگ پروژه‌های قابل اخذ</span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        اعمال آنی بدون نیاز به بیلد
+                      </span>
+                    </h3>
+                    <p className="text-slate-500 text-xs">
+                      پروژه‌های قابل اخذ منحصراً از لینک کاتالوگ و حوزه‌های تعریف‌شده در آن استخراج می‌شوند. سایر صفحات سایت صرفاً برای پاسخ به سوالات عمومی کاربر (آدرس، سوابق تیم‌ها، تسهیلات و ...) استفاده خواهند شد.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="hidden lg:flex items-center gap-4 text-left shrink-0">
+                  <div className="px-3 py-1.5 rounded-xl bg-purple-50 border border-purple-200 text-center">
+                    <span className="block text-[10px] text-purple-700 font-medium">حوزه‌های فعال کاتالوگ</span>
+                    <span className="text-sm font-extrabold text-purple-900">
+                      {catalogConfig.categories.filter((c) => c.active).length} از {catalogConfig.categories.length}
+                    </span>
+                  </div>
+                  <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
+                    <span className="block text-[10px] text-emerald-700 font-medium">مجموع پروژه‌های باز</span>
+                    <span className="text-sm font-extrabold text-emerald-900">
+                      {catalogConfig.categories.filter((c) => c.active).reduce((sum, c) => sum + (c.projectCount || 0), 0)} پروژه
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-900">
-                  دستورالعمل و ماموریت رفتاری دستیار:
-                </label>
+              {/* CARD 1: تنظیم منبع اصلی کاتالوگ پروژه‌ها */}
+              <div className="bg-white border border-purple-150 rounded-2xl p-5 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-purple-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-purple-700" />
+                    <h4 className="font-bold text-xs text-slate-900">
+                      ۱. آدرس اصلی کاتالوگ پروژه‌ها و قوانین اعتبارسنجی
+                    </h4>
+                  </div>
+                  <span className="text-[11px] text-purple-700 font-semibold bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
+                    منبع اصلی و انحصاری پروژه‌های قابل اخذ
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      آدرس اصلی کاتالوگ پروژه‌ها (مرجع انحصاری شناسایی پروژه‌ها):
+                    </label>
+                    <input
+                      type="url"
+                      value={catalogConfig.catalogUrl}
+                      onChange={(e) =>
+                        setCatalogConfig({ ...catalogConfig, catalogUrl: e.target.value })
+                      }
+                      placeholder="https://yazdinnofaraz.ir/categories/"
+                      className="w-full bg-[#f8f7fc] border border-purple-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono dir-ltr focus:outline-none focus:border-purple-600 focus:bg-white"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      هوش مصنوعی موظف است پروژه‌های پیشنهادی به کاربر را صرفاً از این آدرس و حوزه‌های مشتق‌شده از آن استخراج کند.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      الگوی مسیرهای مجاز کاتالوگ:
+                    </label>
+                    <input
+                      type="text"
+                      value={catalogConfig.catalogUrlPatterns.join(', ')}
+                      onChange={(e) =>
+                        setCatalogConfig({
+                          ...catalogConfig,
+                          catalogUrlPatterns: e.target.value
+                            .split(',')
+                            .map((s) => s.trim())
+                            .filter(Boolean),
+                        })
+                      }
+                      placeholder="/categories/, /categories/*"
+                      className="w-full bg-[#f8f7fc] border border-purple-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono dir-ltr focus:outline-none focus:border-purple-600 focus:bg-white"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      با ویرگول جدا کنید.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <label className="flex items-center gap-2.5 cursor-pointer p-3 rounded-xl bg-purple-50/70 border border-purple-200/80 hover:bg-purple-50 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={catalogConfig.enforceCatalogOnlyForProjects}
+                      onChange={(e) =>
+                        setCatalogConfig({
+                          ...catalogConfig,
+                          enforceCatalogOnlyForProjects: e.target.checked,
+                        })
+                      }
+                      className="w-4 h-4 rounded border-purple-300 text-purple-700 focus:ring-purple-200"
+                    />
+                    <div className="text-xs">
+                      <span className="font-bold text-slate-900 block">
+                        الزام اکید: پروژه‌های قابل اخذ فقط و فقط از لینک کاتالوگ و حوزه‌های فعال آن استخراج شوند
+                      </span>
+                      <span className="text-slate-600 text-[11px]">
+                        در صورت فعال بودن، صفحات متفرقه سایت (مانند درباره ما یا اخبار) هرگز به عنوان پروژه قابل اخذ پیشنهاد نخواهند شد.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* CARD 2: مدیریت حوزه‌های کاتالوگ و لینک‌های اختصاصی */}
+              <div className="bg-white border border-purple-150 rounded-2xl p-5 space-y-4 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-100 pb-3">
+                  <div>
+                    <h4 className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-purple-700" />
+                      <span>۲. حوزه‌های فعال پروژه‌ها در کاتالوگ ({catalogConfig.categories.length} حوزه)</span>
+                    </h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      هر حوزه دارای لینک اختصاصی در کاتالوگ، تعداد پروژه‌های آماده اخذ، و مهارت‌های مورد نیاز است.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingCategoryId(null);
+                      setCategoryForm({
+                        name: '',
+                        subUrl: '',
+                        projectCount: 0,
+                        keySkillsText: '',
+                        description: '',
+                        active: true,
+                      });
+                      setShowCategoryForm(!showCategoryForm);
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs shrink-0 self-start sm:self-auto"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>افزودن حوزه جدید به کاتالوگ</span>
+                  </button>
+                </div>
+
+                {/* Form to Add / Edit Category */}
+                {showCategoryForm && (
+                  <form
+                    onSubmit={handleSaveCategory}
+                    className="p-4 rounded-xl bg-purple-50/70 border border-purple-200 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-purple-900">
+                        {editingCategoryId ? 'ویرایش اطلاعات حوزه کاتالوگ' : 'افزودن حوزه جدید به کاتالوگ'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCategoryForm(false);
+                          setEditingCategoryId(null);
+                        }}
+                        className="text-xs text-slate-500 hover:text-slate-800 cursor-pointer"
+                      >
+                        انصراف
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          عنوان حوزه (مثال: کشاورزی و امنیت غذایی)
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={categoryForm.name}
+                          onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
+                          placeholder="مثلاً: رباتیک و اتوماسیون صنعتی"
+                          className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
+                        />
+                      </div>
+
+                      <div className="md:col-span-2">
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          آدرس URL مستقیم زیرشاخه در کاتالوگ:
+                        </label>
+                        <input
+                          type="url"
+                          required
+                          value={categoryForm.subUrl}
+                          onChange={(e) => setCategoryForm({ ...categoryForm, subUrl: e.target.value })}
+                          placeholder="https://yazdinnofaraz.ir/categories/robotics/"
+                          className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono dir-ltr focus:outline-none focus:border-purple-600"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          تعداد پروژه‌های قابل اخذ:
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          max={9999}
+                          value={categoryForm.projectCount}
+                          onChange={(e) => setCategoryForm({ ...categoryForm, projectCount: Number(e.target.value) })}
+                          className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold text-center focus:outline-none focus:border-purple-600"
+                        />
+                      </div>
+
+                      <div className="md:col-span-3">
+                        <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                          مهارت‌های کلیدی (با کاما یا ویرگول جدا کنید):
+                        </label>
+                        <input
+                          type="text"
+                          value={categoryForm.keySkillsText}
+                          onChange={(e) => setCategoryForm({ ...categoryForm, keySkillsText: e.target.value })}
+                          placeholder="مثلاً: طراحی برد، ROS، پردازش تصویر، اینترنت اشیاء"
+                          className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        توضیحات و محورهای اولویت‌دار حوزه:
+                      </label>
+                      <input
+                        type="text"
+                        value={categoryForm.description}
+                        onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })}
+                        placeholder="توضیح کوتاه درباره فرصت‌های این حوزه و اولویت‌های سرمایه‌گذاری"
+                        className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-purple-600"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={categoryForm.active}
+                          onChange={(e) => setCategoryForm({ ...categoryForm, active: e.target.checked })}
+                          className="rounded border-purple-300 text-purple-700 focus:ring-purple-200"
+                        />
+                        <span>این حوزه فعال باشد و در پیشنهادات مشاور لحاظ گردد</span>
+                      </label>
+
+                      <button
+                        type="submit"
+                        className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>{editingCategoryId ? 'بروزرسانی حوزه' : 'ثبت حوزه در کاتالوگ'}</span>
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Categories Table */}
+                <div className="overflow-x-auto rounded-xl border border-purple-150">
+                  <table className="w-full text-right text-xs">
+                    <thead className="bg-[#f8f7fc] text-slate-600 border-b border-purple-150">
+                      <tr>
+                        <th className="p-3 font-semibold">عنوان حوزه</th>
+                        <th className="p-3 font-semibold text-center">پروژه‌های قابل اخذ</th>
+                        <th className="p-3 font-semibold">لینک مستقیم در کاتالوگ</th>
+                        <th className="p-3 font-semibold">مهارت‌های کلیدی</th>
+                        <th className="p-3 font-semibold text-center">وضعیت</th>
+                        <th className="p-3 font-semibold text-center">عملیات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-purple-100">
+                      {catalogConfig.categories.map((cat) => (
+                        <tr
+                          key={cat.id}
+                          className={`hover:bg-purple-50/50 transition-colors ${
+                            !cat.active ? 'opacity-60 bg-slate-50' : ''
+                          }`}
+                        >
+                          <td className="p-3 font-bold text-slate-900">
+                            <div>{cat.name}</div>
+                            {cat.description && (
+                              <div className="text-[11px] text-slate-500 font-normal mt-0.5 line-clamp-1">
+                                {cat.description}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3 text-center">
+                            <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-purple-50 text-purple-800 border border-purple-200">
+                              {cat.projectCount}
+                            </span>
+                          </td>
+                          <td className="p-3 font-mono text-[11px] text-slate-600 dir-ltr text-left">
+                            <a
+                              href={cat.subUrl || catalogConfig.catalogUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="hover:text-purple-700 hover:underline flex items-center gap-1"
+                            >
+                              <span className="truncate max-w-[200px]">
+                                {cat.subUrl || catalogConfig.catalogUrl}
+                              </span>
+                              <ExternalLink className="w-3 h-3 shrink-0" />
+                            </a>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex flex-wrap gap-1 max-w-xs">
+                              {(cat.keySkills || []).slice(0, 3).map((sk, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-1.5 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px]"
+                                >
+                                  {sk}
+                                </span>
+                              ))}
+                              {(cat.keySkills || []).length > 3 && (
+                                <span className="text-[10px] text-slate-400">
+                                  +{(cat.keySkills || []).length - 3}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleCategoryActive(cat.id)}
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-colors ${
+                                cat.active
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : 'bg-slate-100 text-slate-500 border border-slate-200'
+                              }`}
+                            >
+                              {cat.active ? 'فعال' : 'غیرفعال'}
+                            </button>
+                          </td>
+                          <td className="p-3">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditCategory(cat)}
+                                className="p-1.5 rounded-lg bg-slate-100 hover:bg-purple-100 text-slate-700 hover:text-purple-800 transition-colors"
+                                title="ویرایش حوزه"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCategory(cat.id)}
+                                className="p-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 transition-colors"
+                                title="حذف حوزه"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* CARD 3: دستورالعمل سایر صفحات سایت و اطلاعات سازمانی مرکز */}
+              <div className="bg-white border border-purple-150 rounded-2xl p-5 space-y-3 shadow-xs">
+                <div className="flex items-center justify-between border-b border-purple-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Info className="w-4 h-4 text-purple-700" />
+                    <h4 className="font-bold text-xs text-slate-900">
+                      ۳. دستورالعمل استفاده از سایر صفحات و اطلاعات عمومی مرکز رشد
+                    </h4>
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    پاسخ به سوالاتی مانند آدرس، تعداد تیم‌ها، تسهیلات و شرایط پذیرش
+                  </span>
+                </div>
+
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  هوش مصنوعی از سایر صفحات وب‌سایت نوفرآز (شامل درباره ما، تماس با ما، تیم‌ها، تسهیلات، سوالات متداول و ...) صرفاً برای پاسخ به پرسش‌های اطلاعاتی و سازمانی زیر استفاده خواهد کرد:
+                </p>
+
                 <textarea
-                  rows={13}
-                  value={directionText}
-                  onChange={(e) => setDirectionText(e.target.value)}
-                  className="w-full bg-white border border-purple-200 rounded-2xl p-4 text-xs sm:text-sm text-slate-800 placeholder-slate-600 focus:outline-none focus:border-purple-600 leading-relaxed font-sans"
+                  rows={4}
+                  value={catalogConfig.generalPagesGuidance}
+                  onChange={(e) =>
+                    setCatalogConfig({ ...catalogConfig, generalPagesGuidance: e.target.value })
+                  }
+                  className="w-full bg-[#f8f7fc] border border-purple-200 rounded-xl p-3 text-xs text-slate-800 placeholder-slate-500 focus:outline-none focus:border-purple-600 focus:bg-white leading-relaxed font-sans"
+                  placeholder="دستورالعمل نحوه برخورد با صفحات متفرقه سایت..."
                 />
               </div>
 
+              {/* CARD 4: متن دستورالعمل و جهت‌دهی رفتاری دستیار هوشمند */}
+              <div className="bg-white border border-purple-150 rounded-2xl p-5 space-y-3 shadow-xs">
+                <div className="flex items-center justify-between border-b border-purple-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-700" />
+                    <h4 className="font-bold text-xs text-slate-900">
+                      ۴. متن جهت‌دهی جامع و رفتارشناسی مشاور هوشمند (Persian System Prompt)
+                    </h4>
+                  </div>
+                  <span className="text-[11px] text-slate-500">
+                    خط‌مشی رفتار، جمع‌آوری تدریجی اطلاعات، استدلال و پیشنهاد گام‌های عملی
+                  </span>
+                </div>
+
+                <textarea
+                  rows={10}
+                  value={directionText}
+                  onChange={(e) => setDirectionText(e.target.value)}
+                  className="w-full bg-[#f8f7fc] border border-purple-200 rounded-xl p-4 text-xs sm:text-sm text-slate-800 placeholder-slate-500 focus:outline-none focus:border-purple-600 focus:bg-white leading-relaxed font-sans"
+                />
+              </div>
+
+              {/* Status Notifications */}
               {directionSuccessMsg && (
-                <div className="p-3 rounded-xl bg-emerald-950/70 border border-emerald-800 text-purple-800 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-purple-700 shrink-0" />
-                  <span>{directionSuccessMsg}</span>
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2.5">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <span className="font-medium">{directionSuccessMsg}</span>
                 </div>
               )}
 
-              <div className="flex items-center justify-between pt-2">
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
                 <button
                   type="button"
                   onClick={handleResetDirection}
-                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>بازگردانی متن پیش‌فرض</span>
+                  <span>بازنشانی به مقادیر پیش‌فرض</span>
                 </button>
 
                 <button
                   type="button"
                   disabled={isSavingDirection}
                   onClick={handleSaveDirection}
-                  className="px-5 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-lg transition-all cursor-pointer flex items-center gap-2 disabled:opacity-50"
+                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs shadow-md shadow-purple-700/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSavingDirection ? (
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <Check className="w-4 h-4" />
                   )}
-                  <span>ذخیره تغییرات جهت‌دهی</span>
+                  <span>ذخیره تمامی تنظیمات جهت‌دهی و کاتالوگ پروژه‌ها</span>
                 </button>
               </div>
             </div>
@@ -1343,14 +2102,20 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 
                 {/* Host Source Selector */}
                 <div className="p-4 rounded-xl bg-[#f8f7fc] border border-purple-150 space-y-3">
-                  <span className="text-xs font-bold text-slate-700 block">انتخاب دامنه و میزبان ویجت:</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 block">۱. انتخاب یا تعیین دامنه و میزبان ویجت:</span>
+                    <span className="text-[11px] text-purple-700 font-semibold bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-200">
+                      تنظیم خودکار بر اساس سرور
+                    </span>
+                  </div>
+                  
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button
                       type="button"
-                      onClick={() => setEmbedHostOption('shared')}
+                      onClick={() => handleHostOptionSelect('shared')}
                       className={`p-3 rounded-xl border text-right transition-all cursor-pointer ${
                         embedHostOption === 'shared'
-                          ? 'border-purple-600 bg-purple-50 text-white'
+                          ? 'border-purple-600 bg-purple-50 text-slate-900 ring-2 ring-purple-600/20'
                           : 'border-purple-150 bg-white text-slate-500 hover:border-purple-200'
                       }`}
                     >
@@ -1360,67 +2125,84 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
 
                     <button
                       type="button"
-                      onClick={() => setEmbedHostOption('current')}
+                      onClick={() => handleHostOptionSelect('current')}
                       className={`p-3 rounded-xl border text-right transition-all cursor-pointer ${
                         embedHostOption === 'current'
-                          ? 'border-purple-600 bg-purple-50 text-white'
+                          ? 'border-purple-600 bg-purple-50 text-slate-900 ring-2 ring-purple-600/20'
                           : 'border-purple-150 bg-white text-slate-500 hover:border-purple-200'
                       }`}
                     >
-                      <span className="block text-xs font-bold text-amber-400">دامنه جاری مرورگر</span>
+                      <span className="block text-xs font-bold text-amber-600">دامنه جاری سرور / مرورگر</span>
                       <span className="block text-[10px] text-slate-500 mt-0.5 dir-ltr truncate">{currentOrigin}</span>
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => setEmbedHostOption('custom')}
+                      onClick={() => handleHostOptionSelect('custom')}
                       className={`p-3 rounded-xl border text-right transition-all cursor-pointer ${
                         embedHostOption === 'custom'
-                          ? 'border-purple-600 bg-purple-50 text-white'
+                          ? 'border-purple-600 bg-purple-50 text-slate-900 ring-2 ring-purple-600/20'
                           : 'border-purple-150 bg-white text-slate-500 hover:border-purple-200'
                       }`}
                     >
-                      <span className="block text-xs font-bold text-cyan-400">دامنه اختصاصی خودتان</span>
+                      <span className="block text-xs font-bold text-indigo-600">دامنه اختصاصی شما</span>
                       <span className="block text-[10px] text-slate-500 mt-0.5">مانند assistant.yazdinnofaraz.ir</span>
                     </button>
                   </div>
 
                   {embedHostOption === 'custom' && (
                     <div className="pt-2">
-                      <label className="text-[11px] text-slate-500 block mb-1">آدرس دامنه اختصاصی شما (با https://):</label>
+                      <label className="text-[11px] text-slate-600 block mb-1 font-semibold">دامنه پایه اختصاصی (با https://):</label>
                       <input
                         type="url"
                         placeholder="https://assistant.yazdinnofaraz.ir"
                         value={customHost}
-                        onChange={(e) => setCustomHost(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-purple-200 text-xs text-white font-mono dir-ltr focus:outline-none focus:border-cyan-500"
+                        onChange={(e) => handleCustomHostChange(e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-purple-200 text-xs text-slate-900 font-mono dir-ltr focus:outline-none focus:border-purple-600"
                       />
                     </div>
                   )}
+
+                  {/* Direct Editable Widget URL Box */}
+                  <div className="pt-2 border-t border-purple-150">
+                    <label className="text-[11px] text-slate-700 block mb-1 font-bold">
+                      ۲. آدرس نهایی ویجت دستیار (می‌توانید مستقیم نیز ویرایش کنید):
+                    </label>
+                    <input
+                      type="url"
+                      value={widgetUrlInput}
+                      onChange={(e) => setWidgetUrlInput(e.target.value)}
+                      placeholder="https://ais-pre-...run.app/widget"
+                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-purple-200 text-xs text-slate-900 font-mono dir-ltr focus:outline-none focus:border-purple-600 shadow-xs"
+                    />
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      با تغییر این آدرس، کد HTML آماده برای کپی به صورت خودکار و زنده با آدرس جدید جایگزین می‌شود.
+                    </p>
+                  </div>
                 </div>
 
                 {/* Important 403 Explanation Alert */}
-                <div className="p-4 rounded-xl bg-amber-950/40 border border-amber-800/80 text-xs text-amber-200 space-y-2">
-                  <div className="flex items-center gap-2 font-bold text-amber-300">
-                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-amber-800">
+                    <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600" />
                     <span>علت خطای ۴۰۳ (Access Denied) در لینک‌های ais-dev و نحوه رفع آن:</span>
                   </div>
-                  <p className="text-[11px] text-slate-700 leading-relaxed">
-                    گوگل آدرس‌های با پیشوند <code className="text-amber-300 font-mono bg-white px-1 py-0.5 rounded">ais-dev-</code> را به عنوان محیط توسعه خصوصی برنامه‌نویس قفل می‌کند و اجازه باز شدن آن توسط سایر کاربران یا بازدیدکنندگان وردپرس را نمی‌دهد.
+                  <p className="text-[11px] text-amber-800 leading-relaxed">
+                    گوگل آدرس‌های با پیشوند <code className="text-amber-900 font-mono bg-amber-100 px-1 py-0.5 rounded">ais-dev-</code> را به عنوان محیط توسعه خصوصی برنامه‌نویس قفل می‌کند و اجازه باز شدن آن توسط سایر کاربران یا بازدیدکنندگان وردپرس را نمی‌دهد.
                   </p>
-                  <p className="text-[11px] text-purple-800 leading-relaxed font-semibold">
-                    برای اینکه کاربران سایت شما مستقیماً و بدون هیچ اروری به ویجت دسترسی داشته باشند، کافیست در بالای همین صفحه استودیو روی دکمه <span className="bg-emerald-900/60 px-1.5 py-0.5 rounded border border-emerald-700">Share (اشتراک‌گذاری)</span> کلیک کنید تا نسخه عمومی <code className="text-white font-mono">ais-pre-</code> فعال شود. کد درج شده در جعبه بالا به صورت خودکار از دامنه عمومی استفاده می‌کند.
+                  <p className="text-[11px] text-purple-900 leading-relaxed font-semibold">
+                    برای اینکه کاربران سایت شما مستقیماً و بدون هیچ اروری به ویجت دسترسی داشته باشند، کافیست در بالای همین صفحه استودیو روی دکمه <span className="bg-purple-100 px-1.5 py-0.5 rounded border border-purple-300">Share (اشتراک‌گذاری)</span> کلیک کنید تا نسخه عمومی <code className="text-purple-900 font-mono font-bold">ais-pre-</code> فعال شود. کد درج شده در جعبه زیر به صورت خودکار از دامنه عمومی استفاده می‌کند.
                   </p>
                 </div>
 
                 <div className="space-y-2 pt-2">
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>آدرس اختصاصی ویجت:</span>
-                    <span className="font-mono text-purple-700 dir-ltr">{widgetUrl}</span>
+                  <div className="flex items-center justify-between text-xs text-slate-600">
+                    <span className="font-bold">کد نهایی HTML برای قرار دادن در المنتور یا وردپرس:</span>
+                    <span className="font-mono text-purple-700 dir-ltr text-[11px]">{widgetUrlInput}</span>
                   </div>
 
-                  <pre className="bg-[#f8f7fc] p-4 rounded-xl border border-purple-150 text-[11px] font-mono text-slate-700 overflow-x-auto dir-ltr">
-                    {wordpressEmbedCode}
+                  <pre className="bg-[#f8f7fc] p-4 rounded-xl border border-purple-150 text-[11px] font-mono text-slate-700 overflow-x-auto dir-ltr max-h-72 select-all">
+                    {currentEmbedCode}
                   </pre>
                 </div>
               </div>
@@ -1428,31 +2210,130 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               {/* Instructions */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-5 rounded-2xl bg-white border border-purple-150 space-y-3">
-                  <h4 className="font-bold text-xs text-white">مراحل درج در المنتور (Elementor):</h4>
+                  <h4 className="font-bold text-xs text-slate-900">مراحل درج در المنتور (Elementor):</h4>
                   <ol className="list-decimal list-inside text-xs text-slate-700 space-y-2 leading-relaxed">
                     <li>وارد پیشخوان وردپرس شده و برگه یا فوتر سراسری (Footer Template) را با المنتور باز کنید.</li>
                     <li>ویجت «کد HTML» (HTML Widget) را به قالب اضافه کنید.</li>
                     <li>کد بالا را کپی کرده و درون فیلد کد المنتور جای‌گذاری کنید.</li>
-                    <li>دکمه «انتشار / ذخیره» را بزنید. آیکون دستیار هوشمند به گوشه سایت اضافه می‌شود.</li>
+                    <li>دکمه «انتشار / ذخیره» را بزنید. دایره کوچک دستیار و پیام ابری در گوشه پایین سمت چپ سایت فعال می‌شود.</li>
                   </ol>
                 </div>
 
                 <div className="p-5 rounded-2xl bg-white border border-purple-150 space-y-3">
-                  <h4 className="font-bold text-xs text-white">رفتار در دسکتاپ و موبایل:</h4>
+                  <h4 className="font-bold text-xs text-slate-900">رفتار در دسکتاپ و موبایل:</h4>
                   <ul className="text-xs text-slate-700 space-y-2 leading-relaxed">
                     <li>
-                      <span className="font-bold text-slate-900">• دسکتاپ: </span>
-                      پنل اسلایدی در سمت راست صفحه با عرض ۴۴۰ پیکسل و ارتفاع تمام‌صفحه باز می‌شود و محتوای سایت نوفرآز همچنان قابل مشاهده است.
+                      <span className="font-bold text-slate-900">• آیکون و پیام ابری: </span>
+                      در گوشه پایین سمت چپ یک دایره کوچک مدرن و پیام ابری زیبا با عنوان «از هوش مصنوعی برای انتخاب پروژه کمک بگیرید» به کاربر نمایش داده می‌شود.
                     </li>
                     <li>
-                      <span className="font-bold text-slate-900">• موبایل: </span>
-                      به صورت باتم‌شیت (Bottom Sheet) مدرن با اشغال حدود ۴۰٪ پایین صفحه باز می‌شود، کاربر حدود ۶۰٪ صفحه وب را می‌بیند و لیست پیام‌ها به طور مستقل اسکرول می‌خورد.
+                      <span className="font-bold text-slate-900">• دسکتاپ (کامپیوتر): </span>
+                      با کلیک کاربر، <span className="text-purple-700 font-bold">سایدبار سمت چپ (Left Sidebar)</span> با عرض ۴۴۰ پیکسل و ارتفاع تمام‌صفحه به صورت روان باز می‌شود و محتوای سایت نیز در پس‌زمینه دیده می‌شود.
                     </li>
                     <li>
-                      <span className="font-bold text-slate-900">• انتقال بافت صفحه: </span>
-                      آدرس دقیق صفحه‌ای که کاربر در حال حاضر در وردپرس مشاهده می‌کند، به عنوان بافت پروژه به مشاور هوشمند پاس داده می‌شود.
+                      <span className="font-bold text-slate-900">• موبایل (گوشی): </span>
+                      به صورت <span className="text-purple-700 font-bold">داون‌بار (Down Bar / Bottom Sheet)</span> با ارتفاع ۸۵٪ از پایین صفحه بالا می‌آید تا کاربر با نهایت راحتی چت کند و پروژه‌ها را بررسی نماید.
+                    </li>
+                    <li>
+                      <span className="font-bold text-slate-900">• انتقال خودکار آدرس صفحه: </span>
+                      آدرس دقیق صفحه‌ای از سایت که کاربر روی آن کلیک کرده به عنوان کانتکست به دستیار منتقل می‌گردد.
                     </li>
                   </ul>
+                </div>
+              </div>
+
+              {/* CARD: راهنمای کرون جابز برای جلوگیری از اسلیپ سرور در رندر (Render / Cloud Hosting) */}
+              <div className="p-6 rounded-2xl bg-white border border-purple-150 space-y-4 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-purple-100 pb-3">
+                  <div>
+                    <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-purple-700" />
+                      <span>راهنمای تنظیم Cron Job در هاست برای جلوگیری از به خواب رفتن سرور (Sleep / Spin-down در Render)</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                      سرویس‌های هاستینگ نظیر Render در پلن رایگان پس از ۱۵ دقیقه عدم فعالیت به حالت Sleep می‌روند. با تنظیم یک کرون جاب هر ۱۰ دقیقه یک‌بار، سرور شما همیشه آنلاین، بیدار و آماده پاسخگویی سریع به کاربران خواهد بود.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={testServerHealth}
+                      className="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${healthTestStatus === 'testing' ? 'animate-spin' : ''}`} />
+                      <span>تست پینگ زنده سرور</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleCopyCronCode}
+                      className="px-4 py-2 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold transition-all cursor-pointer shadow-xs flex items-center gap-1.5"
+                    >
+                      {copiedCron ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      <span>{copiedCron ? 'کپی شد!' : 'کپی دستور Cron'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {healthTestStatus !== 'idle' && (
+                  <div className={`p-3 rounded-xl border text-xs flex items-center justify-between ${
+                    healthTestStatus === 'ok'
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                      : healthTestStatus === 'testing'
+                      ? 'bg-purple-50 border-purple-200 text-purple-900'
+                      : 'bg-rose-50 border-rose-200 text-rose-900'
+                  }`}>
+                    <span>
+                      {healthTestStatus === 'testing' && 'در حال ارسال درخواست پینگ به سرور...'}
+                      {healthTestStatus === 'ok' && `✅ سرور با موفقیت پاسخ داد (پینگ: ${healthTestLatency}ms). این اندپوینت آماده دریافت کرون جاب است.`}
+                      {healthTestStatus === 'fail' && '❌ خطا در ارسال پینگ به سرور. لطفاً آدرس سرور را بررسی فرمایید.'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Crontab Code Box */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs text-slate-600">
+                    <span className="font-bold">دستور کرون جاب (اجرا هر ۱۰ دقیقه):</span>
+                    <span className="text-[11px] font-mono text-purple-700">اینتروال: */10 * * * *</span>
+                  </div>
+
+                  <pre className="bg-[#f8f7fc] p-3.5 rounded-xl border border-purple-150 text-[11px] font-mono text-purple-950 overflow-x-auto dir-ltr select-all">
+                    {cronCurlCommand}
+                  </pre>
+                  <p className="text-[11px] text-slate-500">
+                    یا در صورت استفاده از wget: <code className="bg-slate-100 text-purple-800 px-1 py-0.5 rounded dir-ltr font-mono">{cronWgetCommand}</code>
+                  </p>
+                </div>
+
+                {/* Step by step for cPanel and free tools */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                  <div className="p-4 rounded-xl bg-purple-50/50 border border-purple-150 text-xs space-y-2">
+                    <span className="font-bold text-slate-900 block">نحوه تنظیم در سی‌پنل (cPanel Cron Jobs):</span>
+                    <ol className="list-decimal list-inside text-slate-600 space-y-1.5 leading-relaxed">
+                      <li>وارد کنترل‌پنل هاست سی‌پنل (cPanel) خود شوید.</li>
+                      <li>در بخش <strong>Advanced</strong> روی گزینه <strong>Cron Jobs</strong> کلیک کنید.</li>
+                      <li>در بخش Common Settings، گزینه <strong>Once Per 10 Minutes (*/10 * * * *)</strong> را انتخاب کنید.</li>
+                      <li>در کادر <strong>Command</strong>، دستور curl بالا را جای‌گذاری نمایید.</li>
+                      <li>روی دکمه <strong>Add New Cron Job</strong> کلیک کنید.</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-purple-50/50 border border-purple-150 text-xs space-y-2">
+                    <span className="font-bold text-slate-900 block">روش جایگزین رایگان بدون هاست (Uptime Monitors):</span>
+                    <p className="text-slate-600 leading-relaxed">
+                      اگر هاست لینوکسی برای کرون جاب ندارید، می‌توانید از وب‌سایت‌های رایگان نگهداری سرور استفاده کنید:
+                    </p>
+                    <ul className="text-slate-600 space-y-1.5 leading-relaxed">
+                      <li>
+                        • <strong>cron-job.org (رایگان):</strong> ثبت‌نام کنید، آدرس <code className="font-mono text-purple-800 bg-white px-1 rounded dir-ltr">{hostBaseUrl}/health</code> را وارد کنید و زمان‌بندی را روی هر ۱۰ دقیقه بگذارید.
+                      </li>
+                      <li>
+                        • <strong>UptimeRobot.com (رایگان):</strong> یک مانیتور HTTP روی آدرس فوق ایجاد کنید تا هر ۵ یا ۱۰ دقیقه به سرور پینگ بزند و از اسلیپ رفتن رندر جلوگیری کند.
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>

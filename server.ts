@@ -27,6 +27,11 @@ async function startServer() {
     next();
   });
 
+  // Fast health ping endpoints for uptime monitors, cron jobs & keep-alive
+  app.get(['/health', '/ping'], (_req, res) => {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
   // API routes
   app.use('/api', apiRouter);
 
