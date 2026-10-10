@@ -550,12 +550,20 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
       <span>از هوش مصنوعی برای انتخاب پروژه کمک بگیرید</span>
     </div>
     <!-- دایره کوچک آیکون دستیار در سمت چپ -->
-    <button id="yazd-ai-btn" type="button" aria-label="مشاور هوشمند انتخاب پروژه" style="width: 54px; height: 54px; min-width: 54px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 50%, #4338ca 100%); border: 2px solid #ffffff; box-shadow: 0 10px 25px -3px rgba(109, 40, 217, 0.5), 0 4px 6px -4px rgba(0,0,0,0.1); cursor: pointer; display: flex; align-items: center; justify-content: center; color: #ffffff; transition: transform 0.2s ease, box-shadow 0.2s ease;">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-        <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
-      </svg>
-    </button>
+    <div id="yazd-ai-btn-wrapper" style="position: relative; width: 56px; height: 56px; min-width: 56px; border-radius: 50%; padding: 2.5px; background: linear-gradient(135deg, #7c3aed, #ec4899, #f59e0b); box-shadow: 0 10px 25px -4px rgba(124, 58, 237, 0.5), 0 4px 6px -4px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.25s ease, box-shadow 0.25s ease;">
+      <button id="yazd-ai-btn" type="button" aria-label="مشاور هوشمند انتخاب پروژه" style="width: 100%; height: 100%; border-radius: 50%; background: radial-gradient(circle at 30% 30%, #581c87 0%, #311042 60%, #1e1b4b 100%); border: 1.5px solid rgba(255,255,255,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; color: #ffffff; padding: 0; outline: none; position: relative; overflow: hidden;">
+        <span style="position: absolute; top: -6px; right: -6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(255,255,255,0.2); filter: blur(3px);"></span>
+        <svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+          <path d="M12 8V4H8"/>
+          <rect width="16" height="12" x="4" y="8" rx="2"/>
+          <path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+        </svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#fbbf24" stroke="#f59e0b" stroke-width="1.5" style="position: absolute; top: 7px; right: 8px; filter: drop-shadow(0 0 3px #fbbf24);">
+          <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+        </svg>
+        <span style="position: absolute; bottom: 4px; width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981;"></span>
+      </button>
+    </div>
   </div>
 
   <!-- لایه تیره پشت پنل -->
@@ -607,7 +615,14 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-5px); }
   }
-  #yazd-ai-btn:hover { transform: scale(1.08); box-shadow: 0 15px 30px -3px rgba(109, 40, 217, 0.6); }
+  @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap');
+  #yazd-growth-ai-root, #yazd-growth-ai-root * {
+    font-family: 'Vazirmatn', Tahoma, system-ui, -apple-system, sans-serif !important;
+  }
+  #yazd-ai-btn-wrapper:hover {
+    transform: scale(1.08);
+    box-shadow: 0 15px 30px -3px rgba(124, 58, 237, 0.65), 0 0 15px rgba(236, 72, 153, 0.4);
+  }
   #yazd-ai-cloud:hover { background: #f5f3ff; border-color: #c4b5fd; transform: translateY(-2px); }
   #yazd-ai-close-btn:hover, #yazd-ai-resize-btn:hover { background: rgba(255,255,255,0.35); }
 
@@ -728,7 +743,9 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
     }, 320);
   }
 
+  var btnWrapper = document.getElementById("yazd-ai-btn-wrapper");
   if (btn) btn.addEventListener("click", openAssistant);
+  if (btnWrapper) btnWrapper.addEventListener("click", openAssistant);
   if (cloud) cloud.addEventListener("click", openAssistant);
   if (closeBtn) closeBtn.addEventListener("click", closeAssistant);
   if (overlay) overlay.addEventListener("click", closeAssistant);

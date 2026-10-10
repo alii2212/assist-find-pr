@@ -213,11 +213,48 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
   };
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const isNearBottomRef = useRef(true);
 
-  // Auto-scroll to latest message
+  // Monitor user scroll position: if user scrolled up manually, don't jerk them down!
+  const handleScroll = () => {
+    if (!scrollContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
+    const distanceToBottom = scrollHeight - (scrollTop + clientHeight);
+    const nearBottom = distanceToBottom < 80;
+    isNearBottomRef.current = nearBottom;
+    setShowScrollBottom(!nearBottom);
+  };
+
+  const scrollToBottom = (smooth = true) => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+      isNearBottomRef.current = true;
+      setShowScrollBottom(false);
+    }
+  };
+
+  // Auto-scroll ONLY when user has NOT scrolled up or when a new user message is sent
+  const prevMessagesCountRef = useRef(messages.length);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const isNewMessage = messages.length > prevMessagesCountRef.current;
+    prevMessagesCountRef.current = messages.length;
+
+    // If user just sent a message, always scroll down
+    if (isNewMessage) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg?.role === 'user') {
+        scrollToBottom(true);
+        return;
+      }
+    }
+
+    // During streaming or AI typing: only follow along if user is already at the bottom
+    if (isNearBottomRef.current) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages, isStreaming]);
 
   // Adjust textarea height
@@ -290,14 +327,31 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
             )}
           </div>
 
-          {/* Small Circular Launcher Button (دایره کوچک سمت چپ) */}
+          {/* Small Circular Launcher Button (دایره هوشمند چندلایه و جذاب) */}
           <button
             onClick={onToggle}
             type="button"
-            className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-700 via-violet-700 to-indigo-700 hover:from-purple-800 hover:to-violet-800 text-white shadow-2xl shadow-purple-700/40 flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer border-2 border-white shrink-0"
+            className="relative w-14 h-14 rounded-full p-[2px] bg-gradient-to-tr from-purple-600 via-pink-500 to-amber-300 shadow-xl shadow-purple-600/40 hover:shadow-2xl hover:shadow-purple-600/60 transition-all duration-300 hover:scale-108 active:scale-95 cursor-pointer shrink-0 group/btn"
             title="مشاور هوشمند انتخاب پروژه"
           >
-            <Sparkles className="w-5 h-5 text-white animate-spin-slow" />
+            {/* Glowing outer animation */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-purple-600 to-pink-500 blur-sm opacity-60 group-hover/btn:opacity-100 transition-opacity animate-pulse" />
+            
+            {/* Inner circle body */}
+            <div className="relative w-full h-full rounded-full bg-gradient-to-br from-purple-900 via-indigo-900 to-slate-900 border border-white/40 flex items-center justify-center overflow-hidden">
+              {/* Background shimmer */}
+              <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-purple-400/30 blur-xs" />
+              <div className="absolute -bottom-2 -left-2 w-7 h-7 rounded-full bg-pink-400/20 blur-xs" />
+              
+              {/* Main Bot & Sparkle icon combo */}
+              <div className="relative flex items-center justify-center">
+                <Bot className="w-6 h-6 text-white drop-shadow-md transition-transform duration-300 group-hover/btn:scale-110" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-300 absolute -top-1 -right-1 animate-spin-slow drop-shadow-xs" />
+              </div>
+
+              {/* Online live indicator badge */}
+              <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-emerald-400 ring-2 ring-purple-950" />
+            </div>
           </button>
         </div>
       )}
@@ -540,7 +594,11 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
           )}
 
           {/* Messages Scroll Body */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#faf9fe]">
+          <div
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#faf9fe] relative"
+          >
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-4 text-slate-500">
                 <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3 shadow-xs">
@@ -698,6 +756,16 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
             )}
 
             <div ref={messagesEndRef} />
+            {showScrollBottom && (
+              <button
+                type="button"
+                onClick={() => scrollToBottom(true)}
+                className="sticky bottom-2 left-1/2 -translate-x-1/2 mx-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-900/90 text-white text-[11px] font-bold shadow-lg backdrop-blur-xs hover:bg-purple-800 transition-all cursor-pointer z-20"
+              >
+                <ChevronDown className="w-3.5 h-3.5 animate-bounce" />
+                <span>مشاهده پیام‌های جدید</span>
+              </button>
+            )}
           </div>
 
           {/* Error Alert Bar */}
