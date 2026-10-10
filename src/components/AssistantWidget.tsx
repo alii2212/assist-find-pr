@@ -139,12 +139,10 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
     }
   };
 
-  // Run VPN check automatically when the assistant opens
+  // Run VPN / Server health check immediately on initial page load (so result is ready before user clicks)
   useEffect(() => {
-    if (isOpen) {
-      checkVpnHealth();
-    }
-  }, [isOpen]);
+    checkVpnHealth();
+  }, []);
 
   // Handle desktop resize (dragging right edge of the left-docked sidebar)
   useEffect(() => {
@@ -285,6 +283,11 @@ export const AssistantWidget: React.FC<AssistantWidgetProps> = ({
           >
             <Sparkles className="w-3.5 h-3.5 text-purple-700 shrink-0" />
             <span className="whitespace-nowrap">از هوش مصنوعی برای انتخاب پروژه کمک بگیرید</span>
+            {vpnStatus === 'vpn_recommended' && (
+              <span className="text-[10px] text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full font-bold shrink-0 animate-bounce">
+                نیاز به VPN ⚠️
+              </span>
+            )}
           </div>
 
           {/* Small Circular Launcher Button (دایره کوچک سمت چپ) */}

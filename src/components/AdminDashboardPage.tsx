@@ -582,12 +582,27 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
         <button id="yazd-ai-close-btn" type="button" aria-label="بستن پنجره" style="background: rgba(255,255,255,0.2); border: none; color: #ffffff; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; transition: background 0.2s ease;">✕</button>
       </div>
     </div>
-    <!-- آی‌فریم لود کننده مشاور هوشمند -->
-    <iframe id="yazd-ai-iframe" src="" style="width: 100%; height: calc(100% - 46px); border: none; display: block;" allow="clipboard-write; identity-credentials-get"></iframe>
+    <!-- کانتینر بدنه آی‌فریم و لودینگ -->
+    <div style="position: relative; width: 100%; height: calc(100% - 46px); background: #f8f7fc;">
+      <!-- پیام در حال بارگذاری اولیه -->
+      <div id="yazd-ai-loader" style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #f8f7fc; z-index: 1; font-family: Tahoma, Vazirmatn, system-ui, sans-serif; direction: rtl; color: #475569; gap: 12px; padding: 20px; text-align: center;">
+        <div style="width: 36px; height: 36px; border: 3px solid #7c3aed; border-top-color: transparent; border-radius: 50%; animation: yazdAiSpin 0.9s linear infinite;"></div>
+        <span style="font-size: 13px; font-weight: 700; color: #1e1b4b;">در حال اتصال به دستیار انتخاب پروژه...</span>
+        <span style="font-size: 11px; color: #64748b; max-width: 280px; line-height: 1.6;">اگر لود شدن طول کشید، در صورت نیاز فیلترشکن (VPN) را روشن کنید یا دکمه بازخوانی را بزنید.</span>
+        <button id="yazd-ai-reload-btn" type="button" style="margin-top: 6px; padding: 6px 14px; background: #ede9fe; color: #6d28d9; border: 1px solid #c4b5fd; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer;">تلاش مجدد بارگذاری</button>
+      </div>
+
+      <!-- آی‌فریم لود کننده مشاور هوشمند -->
+      <iframe id="yazd-ai-iframe" src="" style="width: 100%; height: 100%; border: none; display: block; background: #f8f7fc; position: relative; z-index: 2;" allow="clipboard-write; identity-credentials-get"></iframe>
+    </div>
   </div>
 </div>
 
 <style>
+  @keyframes yazdAiSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
   @keyframes yazdCloudFloat {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-5px); }
@@ -646,14 +661,47 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   var resizeBtn = document.getElementById("yazd-ai-resize-btn");
   var dragDesktop = document.getElementById("yazd-ai-drag-desktop");
   var dragMobile = document.getElementById("yazd-ai-drag-mobile");
-  var isOpen = false;
-  var isMax = false;
+  var reloadBtn = document.getElementById("yazd-ai-reload-btn");
+  var loader = document.getElementById("yazd-ai-loader");
+  var loadTimeout = null;
+
+  function loadIframeUrl() {
+    var currentUrl = encodeURIComponent(window.location.href);
+    var sep = targetUrl.indexOf("?") === -1 ? "?" : "&";
+    var finalSrc = targetUrl + sep + "parentUrl=" + currentUrl;
+    if (loader) loader.style.display = "flex";
+    iframe.src = finalSrc;
+
+    if (loadTimeout) clearTimeout(loadTimeout);
+    loadTimeout = setTimeout(function() {
+      // If after 6 seconds iframe still hasn't sent a confirmation, check
+      if (loader) {
+        loader.innerHTML = '<div style="font-size:28px;">⚠️</div>' +
+          '<span style="font-size:13px; font-weight:700; color:#991b1b;">عدم دریافت پاسخ در ۵ ثانیه</span>' +
+          '<span style="font-size:11px; color:#64748b; max-width:280px; line-height:1.6;">سرور در حال حاضر به فیلترشکن (VPN) نیاز دارد یا در حالت بیدارباش قرار دارد.</span>' +
+          '<button id="yazd-ai-reload-btn-retry" type="button" style="margin-top:8px; padding:6px 14px; background:#7c3aed; color:#fff; border:none; border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;">تلاش مجدد اتصال</button>';
+        var retryBtn = document.getElementById("yazd-ai-reload-btn-retry");
+        if (retryBtn) retryBtn.addEventListener("click", loadIframeUrl);
+      }
+    }, 6000);
+  }
+
+  if (iframe) {
+    iframe.addEventListener("load", function() {
+      if (loadTimeout) clearTimeout(loadTimeout);
+      if (loader) loader.style.display = "none";
+    });
+  }
+
+  if (reloadBtn) {
+    reloadBtn.addEventListener("click", function() {
+      loadIframeUrl();
+    });
+  }
 
   function openAssistant() {
-    if (!iframe.src) {
-      var currentUrl = encodeURIComponent(window.location.href);
-      var sep = targetUrl.indexOf("?") === -1 ? "?" : "&";
-      iframe.src = targetUrl + sep + "parentUrl=" + currentUrl;
+    if (!iframe.src || iframe.src === "about:blank") {
+      loadIframeUrl();
     }
     isOpen = true;
     overlay.style.display = "block";
@@ -682,6 +730,40 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   if (cloud) cloud.addEventListener("click", openAssistant);
   if (closeBtn) closeBtn.addEventListener("click", closeAssistant);
   if (overlay) overlay.addEventListener("click", closeAssistant);
+
+  // Background ping / test on initial page load (قبل از کلیک کاربر)
+  var healthUrl = targetUrl.replace(/\/widget\/?$/i, "") + "/api/health";
+  var healthController = typeof AbortController !== "undefined" ? new AbortController() : null;
+  var healthTimer = healthController ? setTimeout(function() { healthController.abort(); }, 5000) : null;
+  
+  if (typeof fetch !== "undefined") {
+    fetch(healthUrl, { signal: healthController ? healthController.signal : undefined })
+      .then(function(res) {
+        if (healthTimer) clearTimeout(healthTimer);
+        if (res.ok) {
+          // سرور بیدار و آماده است؛ آی‌فریم را در پس‌زمینه پیش‌بارگذاری می‌کنیم تا با کلیک بدون معطلی باز شود
+          var currentUrl = encodeURIComponent(window.location.href);
+          var sep = targetUrl.indexOf("?") === -1 ? "?" : "&";
+          iframe.src = targetUrl + sep + "parentUrl=" + currentUrl;
+        } else {
+          // نیاز به VPN یا کندی
+          showVpnNoticeOnCloud("نیاز به VPN ⚠️");
+        }
+      })
+      .catch(function() {
+        if (healthTimer) clearTimeout(healthTimer);
+        showVpnNoticeOnCloud("نیاز به VPN ⚠️");
+      });
+  }
+
+  function showVpnNoticeOnCloud(label) {
+    if (cloud) {
+      var badge = document.createElement("span");
+      badge.style.cssText = "font-size:10px; color:#b91c1c; background:#fee2e2; padding:2px 6px; border-radius:10px; margin-right:4px; font-weight:bold;";
+      badge.textContent = label;
+      cloud.appendChild(badge);
+    }
+  }
 
   // Resize toggle button
   if (resizeBtn) {
@@ -2099,7 +2181,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
               <div className="p-5 rounded-2xl bg-white border border-purple-150 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-extrabold text-sm text-white">
+                    <h3 className="font-extrabold text-sm text-slate-900">
                       راهنمای درج دستیار در وردپرس و المنتور (WordPress & Elementor)
                     </h3>
                     <p className="text-xs text-slate-500 mt-1">
@@ -2309,7 +2391,7 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
                     </p>
                     <ul className="text-slate-600 space-y-1.5 leading-relaxed">
                       <li>
-                        • <strong>cron-job.org (رایگان):</strong> ثبت‌نام کنید، آدرس <code className="font-mono text-purple-800 bg-white px-1 rounded dir-ltr">{hostBaseUrl}/health</code> را وارد کنید و زمان‌بندی را روی هر ۱۰ دقیقه بگذارید.
+                        • <strong>cron-job.org (رایگان):</strong> ثبت‌نام کنید، آدرس <code className="font-mono text-purple-800 bg-white px-1 rounded dir-ltr">{healthUrl}</code> را وارد کنید و زمان‌بندی را روی هر ۱۰ دقیقه بگذارید.
                       </li>
                       <li>
                         • <strong>UptimeRobot.com (رایگان):</strong> یک مانیتور HTTP روی آدرس فوق ایجاد کنید تا هر ۵ یا ۱۰ دقیقه به سرور پینگ بزند و از اسلیپ رفتن رندر جلوگیری کند.
