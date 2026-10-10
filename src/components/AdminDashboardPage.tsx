@@ -664,6 +664,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   var reloadBtn = document.getElementById("yazd-ai-reload-btn");
   var loader = document.getElementById("yazd-ai-loader");
   var loadTimeout = null;
+  var isOpen = false;
+  var isMax = false;
 
   function loadIframeUrl() {
     var currentUrl = encodeURIComponent(window.location.href);
@@ -732,7 +734,8 @@ export const AdminDashboardPage: React.FC<AdminDashboardPageProps> = ({ onBackTo
   if (overlay) overlay.addEventListener("click", closeAssistant);
 
   // Background ping / test on initial page load (قبل از کلیک کاربر)
-  var healthUrl = targetUrl.replace(/\/widget\/?$/i, "") + "/api/health";
+  var cleanBase = targetUrl.split("/widget")[0].replace(/\\/+$/, "");
+  var healthUrl = cleanBase + "/api/health";
   var healthController = typeof AbortController !== "undefined" ? new AbortController() : null;
   var healthTimer = healthController ? setTimeout(function() { healthController.abort(); }, 5000) : null;
   
